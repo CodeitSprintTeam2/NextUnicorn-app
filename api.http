@@ -1,0 +1,76 @@
+@baseUrl = http://localhost:3000/api
+@companyId = 1
+@otherCompanyId = 2
+@investmentId = 101
+
+### 전체 기업 목록 조회
+GET {{baseUrl}}/companies?page=1&limit=10
+Accept: application/json
+
+### 기업명 검색 및 매출액 내림차순 정렬
+GET {{baseUrl}}/companies?page=1&limit=10&search=코드&sortBy=revenue&order=desc
+Accept: application/json
+
+### 기업 상세 조회
+GET {{baseUrl}}/companies/{{companyId}}
+Accept: application/json
+
+### 기업의 가상 투자 목록 조회
+GET {{baseUrl}}/companies/{{companyId}}/investments?page=1&limit=10
+Accept: application/json
+
+### 기업 선택 완료 및 비교 결과 조회
+POST {{baseUrl}}/comparisons
+Content-Type: application/json
+Accept: application/json
+
+{
+  "myCompanyId": {{companyId}},
+  "compareCompanyIds": [{{otherCompanyId}}]
+}
+
+### 내 기업 매출액 순위 조회
+GET {{baseUrl}}/rankings/companies/{{companyId}}?sortBy=revenue&order=desc
+Accept: application/json
+
+### 비교 현황 조회
+GET {{baseUrl}}/comparison-status?page=1&limit=10&sortBy=myCompanySelections&order=desc
+Accept: application/json
+
+### 가상 투자 등록
+POST {{baseUrl}}/investments
+Content-Type: application/json
+Accept: application/json
+
+{
+  "companyId": {{companyId}},
+  "investorName": "김투자",
+  "amount": 1000000,
+  "comment": "성장 가능성이 높아 보여요.",
+  "password": "1234",
+  "passwordConfirm": "1234"
+}
+
+### 가상 투자 수정
+PATCH {{baseUrl}}/investments/{{investmentId}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "investorName": "김투자",
+  "amount": 1500000,
+  "comment": "수정한 투자 코멘트입니다.",
+  "password": "1234"
+}
+
+### 가상 투자 삭제
+DELETE {{baseUrl}}/investments/{{investmentId}}
+Content-Type: application/json
+
+{
+  "password": "1234"
+}
+
+### 전체 기업 투자 현황 조회
+GET {{baseUrl}}/investment-status?page=1&limit=10&sortBy=totalInvestment&order=desc
+Accept: application/json

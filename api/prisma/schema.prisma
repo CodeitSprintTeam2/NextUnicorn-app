@@ -1,0 +1,71 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Category {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique @db.VarChar(50)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  companies Company[]
+}
+
+model Company {
+  id                       Int                @id @default(autoincrement())
+  name                     String             @db.VarChar(100)
+  description              String             @db.Text
+  categoryId               Int
+  revenue                  BigInt
+  employees                Int
+  createdAt                DateTime           @default(now())
+  updatedAt                DateTime           @updatedAt
+  category                 Category           @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  investments              Investment[]
+  comparisonsAsMyCompany   Comparison[]       @relation("MyCompany")
+  comparisonTargets        ComparisonTarget[]
+
+  @@index([name])
+  @@index([categoryId])
+  @@index([revenue])
+  @@index([employees])
+}
+
+model Investment {
+  id           Int       @id @default(autoincrement())
+  companyId    Int
+  investorName String    @db.VarChar(20)
+  amount       BigInt
+  comment      String    @db.VarChar(200)
+  passwordHash String    @db.VarChar(60)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+  company      Company   @relation(fields: [companyId], references: [id], onDelete: Restrict)
+
+  @@index([companyId, deletedAt, createdAt])
+}
+
+model Comparison {
+  id          Int                @id @default(autoincrement())
+  myCompanyId Int
+  createdAt   DateTime           @default(now())
+  myCompany   Company            @relation("MyCompany", fields: [myCompanyId], references: [id], onDelete: Restrict)
+  targets     ComparisonTarget[]
+
+  @@index([myCompanyId])
+}
+
+model ComparisonTarget {
+  comparisonId Int
+  companyId    Int
+  comparison   Comparison @relation(fields: [comparisonId], references: [id], onDelete: Cascade)
+  company      Company    @relation(fields: [companyId], references: [id], onDelete: Restrict)
+
+  @@id([comparisonId, companyId])
+  @@index([companyId])
+}
