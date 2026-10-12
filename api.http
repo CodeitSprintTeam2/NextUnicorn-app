@@ -45,7 +45,7 @@ Accept: application/json
 {
   "companyId": {{companyId}},
   "investorName": "김투자",
-  "amount": 1000000,
+  "amount": "1000000",
   "comment": "성장 가능성이 높아 보여요.",
   "password": "1234",
   "passwordConfirm": "1234"
@@ -58,7 +58,7 @@ Accept: application/json
 
 {
   "investorName": "김투자",
-  "amount": 1500000,
+  "amount": "1500000",
   "comment": "수정한 투자 코멘트입니다.",
   "password": "1234"
 }
@@ -73,4 +73,16 @@ Content-Type: application/json
 
 ### 전체 기업 투자 현황 조회
 GET {{baseUrl}}/investment-status?page=1&limit=10&sortBy=virtualInvestment&order=desc
+
+### 기업 목록 기본 정렬 확인 — id 오름차순, 200 OK
+GET {{baseUrl}}/companies?page=1&limit=10
+
+### 투자 현황 기본 정렬 확인 — virtualInvestment 내림차순, 200 OK
+GET {{baseUrl}}/investment-status?page=1&limit=10
+
+### 투자 현황 오름차순 표시와 공동 순위 확인 — 200 OK
+GET {{baseUrl}}/investment-status?page=1&limit=10&sortBy=virtualInvestment&order=asc
+
+### sortBy 없이 order만 전달 — 400 INVALID_QUERY
+GET {{baseUrl}}/companies?page=1&limit=10&order=asc
 Accept: application/json

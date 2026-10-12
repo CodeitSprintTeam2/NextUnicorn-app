@@ -7,10 +7,10 @@
 | 기본 경로 | `/api` |
 | 요청·응답 형식 | `application/json` |
 | 날짜 형식 | ISO 8601 문자열 |
-| 금액 형식 | 원 단위의 음수가 아닌 JSON `number` |
+| 금액 형식 | 원 단위의 음수가 아닌 10진수 JSON `string` |
 | 인증 | 사용하지 않음 |
 
-금액은 JavaScript의 안전한 정수 범위인 `Number.MAX_SAFE_INTEGER` 이하만 허용한다. 비밀번호는 투자 등록·수정·삭제 요청에서만 받고 응답에는 포함하지 않는다.
+금액 문자열은 숫자로만 구성하고, 입력 금액은 PostgreSQL `BIGINT` 최댓값인 `9223372036854775807` 이하만 허용한다. 비밀번호는 투자 등록·수정·삭제 요청에서만 받고 응답에는 포함하지 않는다.
 
 `actualInvestment`는 시드 데이터로 저장한 기업의 실제 누적 투자 금액이다. `virtualInvestment`는 `Company`에 저장하지 않고 해당 기업의 `deletedAt`이 `null`인 `Investment.amount`를 합산해 반환하며, 활성 가상 투자 내역이 없으면 `0`이다.
 
@@ -24,7 +24,9 @@
 | `limit` | 1~100의 정수 | `10` | 페이지당 항목 수 |
 | `search` | 문자열 | 없음 | 기업명 부분 일치 검색 |
 | `sortBy` | 엔드포인트별 허용값 | 없음 | 정렬 기준 |
-| `order` | `asc` 또는 `desc` | `desc` | 정렬 방향. `sortBy`와 함께 사용한다. |
+| `order` | `asc` 또는 `desc` | 엔드포인트별 기본값 | 정렬 방향. `sortBy`와 함께 사용하며, `sortBy` 없이 전달하면 `400 INVALID_QUERY`를 반환한다. |
+
+기업을 정렬하는 API에서 기본 기준이나 `sortBy` 값이 같으면 `company.id` 오름차순을 최종 기준으로 사용한다. 이 기준은 페이지네이션 순서를 안정적으로 만들기 위한 것이며 공동 순위를 나누지 않는다.
 
 ### 단건 성공 응답
 
@@ -58,7 +60,7 @@
     "details": [
       {
         "field": "amount",
-        "reason": "1 이상의 정수여야 합니다."
+        "reason": "1 이상 9223372036854775807 이하의 정수 문자열이어야 합니다."
       }
     ]
   }
@@ -77,8 +79,8 @@
   "name": "코드잇",
   "description": "온라인 코딩 교육 스타트업",
   "category": "교육",
-  "actualInvestment": 5000000000,
-  "revenue": 1200000000,
+  "actualInvestment": "5000000000",
+  "revenue": "1200000000",
   "employees": 80
 }
 ```
@@ -90,7 +92,7 @@
   "id": 101,
   "companyId": 1,
   "investorName": "김투자",
-  "amount": 1000000,
+  "amount": "1000000",
   "comment": "성장 가능성이 높아 보여요.",
   "createdAt": "2026-10-08T04:00:00.000Z",
   "updatedAt": "2026-10-08T04:00:00.000Z"
@@ -102,7 +104,7 @@
 | 필드 | 규칙 |
 | --- | --- |
 | `investorName` | 앞뒤 공백 제거 후 1~20자 |
-| `amount` | 1 이상 `Number.MAX_SAFE_INTEGER` 이하의 정수 |
+| `amount` | `1` 이상 `9223372036854775807` 이하의 정수 문자열 |
 | `comment` | 앞뒤 공백 제거 후 1~200자 |
 | `password` | 4~20자 |
 | `passwordConfirm` | `password`와 일치해야 함 |
@@ -113,7 +115,7 @@
 
 `GET /api/companies`
 
-기업 목록을 검색·정렬·페이지네이션하여 반환한다.
+기업 목록을 검색·정렬·페이지네이션하여 반환한다. `sortBy`를 생략하면 `id` 오름차순으로 정렬한다. `sortBy`를 지정하고 `order`를 생략하면 내림차순을 사용한다.
 
 #### Query
 
@@ -123,7 +125,7 @@
 | `limit` | 아니요 | 1~100의 정수 |
 | `search` | 아니요 | 기업명 검색어 |
 | `sortBy` | 아니요 | `actualInvestment`, `revenue`, `employees` |
-| `order` | 아니요 | `asc`, `desc` |
+| `order` | 아니요 | `asc`, `desc` (`sortBy` 지정 시 기본값 `desc`) |
 
 #### 성공 `200 OK`
 
@@ -135,8 +137,8 @@
       "name": "코드잇",
       "description": "온라인 코딩 교육 스타트업",
       "category": "교육",
-      "actualInvestment": 5000000000,
-      "revenue": 1200000000,
+      "actualInvestment": "5000000000",
+      "revenue": "1200000000",
       "employees": 80
     }
   ],
@@ -170,9 +172,9 @@
     "name": "코드잇",
     "description": "온라인 코딩 교육 스타트업",
     "category": "교육",
-    "actualInvestment": 5000000000,
-    "virtualInvestment": 1500000,
-    "revenue": 1200000000,
+    "actualInvestment": "5000000000",
+    "virtualInvestment": "1500000",
+    "revenue": "1200000000",
     "employees": 80
   }
 }
@@ -207,7 +209,7 @@
       "id": 101,
       "companyId": 1,
       "investorName": "김투자",
-      "amount": 1000000,
+      "amount": "1000000",
       "comment": "성장 가능성이 높아 보여요.",
       "createdAt": "2026-10-08T04:00:00.000Z",
       "updatedAt": "2026-10-08T04:00:00.000Z"
@@ -263,8 +265,8 @@
       "name": "코드잇",
       "description": "온라인 코딩 교육 스타트업",
       "category": "교육",
-      "actualInvestment": 5000000000,
-      "revenue": 1200000000,
+      "actualInvestment": "5000000000",
+      "revenue": "1200000000",
       "employees": 80
     },
     "compareCompanies": [
@@ -273,8 +275,8 @@
         "name": "테크스타트",
         "description": "기업용 협업 도구 스타트업",
         "category": "SaaS",
-        "actualInvestment": 3000000000,
-        "revenue": 900000000,
+        "actualInvestment": "3000000000",
+        "revenue": "900000000",
         "employees": 55
       }
     ]
@@ -296,6 +298,8 @@
 `GET /api/rankings/companies/:companyId`
 
 내 기업과 순위가 근접한 기업을 합쳐 최대 5개 반환한다. 첫째 또는 마지막 순위에 가까운 경우 가능한 반대 방향 기업을 더 포함해 최대 5개를 채운다.
+
+순위는 `order`와 관계없이 선택한 기준값이 큰 기업부터 계산한다. 기준값이 같은 기업에는 같은 순위를 부여하고 다음 순위는 동점 기업 수만큼 건너뛴다. `company.id` 오름차순은 동점 기업의 표시 순서만 결정한다. `order`는 응답 배열의 표시 순서만 바꾸며 순위 값에는 영향을 주지 않는다.
 
 #### Query
 
@@ -321,8 +325,8 @@
           "name": "테크스타트",
           "description": "기업용 협업 도구 스타트업",
           "category": "SaaS",
-          "actualInvestment": 3000000000,
-          "revenue": 1500000000,
+          "actualInvestment": "3000000000",
+          "revenue": "1500000000",
           "employees": 55
         }
       },
@@ -333,8 +337,8 @@
           "name": "코드잇",
           "description": "온라인 코딩 교육 스타트업",
           "category": "교육",
-          "actualInvestment": 5000000000,
-          "revenue": 1200000000,
+          "actualInvestment": "5000000000",
+          "revenue": "1200000000",
           "employees": 80
         }
       }
@@ -353,6 +357,8 @@
 ### 비교 현황 조회
 
 `GET /api/comparison-status`
+
+`sortBy`를 생략하면 `company.id` 오름차순으로 정렬한다. `sortBy`를 지정하고 `order`를 생략하면 내림차순을 사용한다. 선택 횟수가 같으면 `company.id` 오름차순을 최종 기준으로 사용한다.
 
 #### Query
 
@@ -374,8 +380,8 @@
         "name": "코드잇",
         "description": "온라인 코딩 교육 스타트업",
         "category": "교육",
-        "actualInvestment": 5000000000,
-        "revenue": 1200000000,
+        "actualInvestment": "5000000000",
+        "revenue": "1200000000",
         "employees": 80
       },
       "myCompanySelections": 12,
@@ -409,7 +415,7 @@
 {
   "companyId": 1,
   "investorName": "김투자",
-  "amount": 1000000,
+  "amount": "1000000",
   "comment": "성장 가능성이 높아 보여요.",
   "password": "1234",
   "passwordConfirm": "1234"
@@ -426,7 +432,7 @@
     "id": 101,
     "companyId": 1,
     "investorName": "김투자",
-    "amount": 1000000,
+    "amount": "1000000",
     "comment": "성장 가능성이 높아 보여요.",
     "createdAt": "2026-10-08T04:00:00.000Z",
     "updatedAt": "2026-10-08T04:00:00.000Z"
@@ -452,7 +458,7 @@
 ```json
 {
   "investorName": "김투자",
-  "amount": 1500000,
+  "amount": "1500000",
   "comment": "수정한 투자 코멘트입니다.",
   "password": "1234"
 }
@@ -466,7 +472,7 @@
     "id": 101,
     "companyId": 1,
     "investorName": "김투자",
-    "amount": 1500000,
+    "amount": "1500000",
     "comment": "수정한 투자 코멘트입니다.",
     "createdAt": "2026-10-08T04:00:00.000Z",
     "updatedAt": "2026-10-08T05:00:00.000Z"
@@ -514,7 +520,9 @@
 
 `GET /api/investment-status`
 
-`rank`는 선택한 `sortBy` 기준의 전체 기업 순위다. `sortBy`를 생략하면 `virtualInvestment` 내림차순을 사용한다.
+`rank`는 선택한 `sortBy` 기준의 전체 기업 순위다. `sortBy`를 생략하면 `virtualInvestment` 내림차순을 사용한다. 투자 금액이 같으면 `company.id` 오름차순으로 표시한다.
+
+순위는 `order`와 관계없이 투자 금액이 큰 기업부터 계산한다. 금액이 같은 기업에는 같은 순위를 부여하고 다음 순위는 동점 기업 수만큼 건너뛴다. `order`는 응답 배열의 표시 순서만 바꾸며 순위 값에는 영향을 주지 않는다.
 
 #### Query
 
@@ -538,8 +546,8 @@
         "description": "온라인 코딩 교육 스타트업",
         "category": "교육"
       },
-      "virtualInvestment": 1500000,
-      "actualInvestment": 5000000000
+      "virtualInvestment": "1500000",
+      "actualInvestment": "5000000000"
     }
   ],
   "meta": {
