@@ -3,6 +3,10 @@
 @otherCompanyId = 2
 @investmentId = 101
 
+### 서버 상태 확인 — 200 OK
+GET {{baseUrl}}/health
+Accept: application/json
+
 ### 전체 기업 목록 조회
 GET {{baseUrl}}/companies?page=1&limit=10
 Accept: application/json

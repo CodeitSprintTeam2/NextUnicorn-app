@@ -1,5 +1,52 @@
 # View My Startup
 
+## 기술
+
+| 구분 | 기술 | 용도 |
+| --- | --- | --- |
+| 패키지 관리 | npm | 프론트엔드·백엔드 의존성 및 스크립트 관리 |
+| 언어·모듈 | JavaScript, ES 모듈 | `import`/`export` 방식으로 코드 작성 |
+| 프론트엔드 | Vite, React, React Router, axios | 화면 구성, 클라이언트 라우팅, API 요청 |
+| 백엔드 | Node.js 24, Express 5 | HTTP API 서버 |
+| ORM | Prisma 7 | PostgreSQL 스키마, 마이그레이션, 쿼리 |
+| 데이터베이스 | PostgreSQL | 개발·배포 데이터 저장 |
+| 비밀번호 | bcrypt | 가상 투자 비밀번호 해시 및 비교 |
+| CORS | cors | 허용된 프론트엔드 Origin의 API 요청 처리 |
+| 프론트엔드 배포 | Netlify | Vite 빌드 결과 배포 |
+| 서버·DB 배포 | Render, Render PostgreSQL | Express 서버와 배포 DB 운영 |
+
+README 기술 표에 없는 패키지는 사용하기 전에 팀의 합의를 받는다.
+
+## 실행 환경과 CORS
+
+| 환경 | 프론트엔드 API 주소 | 서버가 허용할 Origin |
+| --- | --- | --- |
+| 개발 | `frontend/.env`의 `VITE_API_BASE_URL=http://localhost:3000/api` | `backend/.env`의 `CLIENT_ORIGIN=http://localhost:5173` |
+| 배포 | Netlify 환경 변수의 `VITE_API_BASE_URL=https://RENDER_HOST/api` | Render 환경 변수의 `CLIENT_ORIGIN=https://NETLIFY_HOST` |
+
+- Express는 `cors` 미들웨어에서 현재 환경의 `CLIENT_ORIGIN` 한 주소만 허용한다.
+- `Access-Control-Allow-Origin: *`는 사용하지 않는다.
+- 쿠키나 세션 인증을 사용하지 않으므로 credential 요청을 허용하지 않는다.
+- 허용 메서드는 `GET`, `POST`, `PATCH`, `DELETE`, `OPTIONS`다.
+- 허용 요청 헤더는 `Content-Type`이다.
+- preflight `OPTIONS` 요청은 `cors` 미들웨어가 처리한다.
+- 실제 Netlify·Render 주소와 비밀정보는 저장소에 기록하지 않는다.
+
+## API 실패 목록
+
+| HTTP 상태 | 코드 | 고정 문구 |
+| --- | --- | --- |
+| `400` | `INVALID_QUERY` | 쿼리 값이 올바르지 않습니다. |
+| `400` | `INVALID_PATH_PARAMETER` | 경로 매개변수가 올바르지 않습니다. |
+| `400` | `VALIDATION_ERROR` | 요청 값이 올바르지 않습니다. |
+| `401` | `INVALID_PASSWORD` | 비밀번호가 일치하지 않습니다. |
+| `404` | `COMPANY_NOT_FOUND` | 기업을 찾을 수 없습니다. |
+| `404` | `INVESTMENT_NOT_FOUND` | 투자 내역을 찾을 수 없습니다. |
+| `409` | `CONFLICT` | 현재 데이터 상태와 요청이 충돌합니다. |
+| `500` | `INTERNAL_SERVER_ERROR` | 서버 오류가 발생했습니다. |
+
+서버는 같은 실패 코드에 항상 위 문구를 사용한다. 필드별 검증 이유가 필요하면 API 계약에 따라 `details`를 추가한다.
+
 ## 기능 목록
 
 | 구분 | 누가 | 무엇을 할 수 있다 |
@@ -127,6 +174,7 @@
 | 2026-10-08 | 실제 누적 투자 금액은 `Company.actualInvestment`에 시드로 저장하고, 활성 `Investment.amount` 합계는 `virtualInvestment`로 제공한다. | 외부의 실제 투자 실적과 서비스 내 가상 투자 결과를 서로 다른 원본과 의미로 관리하기 위해서다. | 실제 투자 데이터의 갱신 방식이나 가상 투자 집계 전략이 바뀔 때 |
 | 2026-10-08 | 개발 이슈는 화면·API·DB를 함께 완성하는 기능별 세로 단위로 나눈다. | 각 이슈가 배포 환경에서 사용자에게 동작하는 결과를 만들게 하기 위해서다. | 팀 역할이나 작업 흐름을 다시 나눌 때 |
 | 2026-10-12 | 개발자별 로컬 PostgreSQL과 Render 배포 PostgreSQL을 분리하고 스테이징 환경은 두지 않는다. |  |  |
+| 2026-10-12 | Netlify 화면에서 Render 서버로 요청할 때 Express의 `cors` 패키지로 현재 환경의 `CLIENT_ORIGIN`만 허용한다. | 화면과 서버의 주소가 달라 CORS 처리가 필요하기 때문이다. |  |
 
 ## 공통 정렬 및 순위 규칙
 
@@ -142,7 +190,7 @@
 
 | 환경 | 데이터베이스 | 연결 정보 | 용도 |
 | --- | --- | --- | --- |
-| 개발 | 개발자별 로컬 PostgreSQL | `backend/.env`의 `DATABASE_URL` | 개발, 테스트, 개발용 데이터 확인 |
+| 개발 | 개발자별 로컬 PostgreSQL | `backend/.env`의 `DATABASE_URL` | 개발, 개발용 데이터 확인 |
 | 배포 | Render PostgreSQL | Render 환경 변수의 `DATABASE_URL` | 배포 서비스의 운영 데이터 |
 
 - 개발 환경과 배포 환경은 같은 Prisma 스키마와 마이그레이션 파일을 사용한다.
