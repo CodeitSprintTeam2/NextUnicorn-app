@@ -51,7 +51,7 @@ erDiagram
 
     COMPANY {
         int id PK
-        varchar name
+        varchar name UK
         text description
         int categoryId FK
         bigint actualInvestment
@@ -142,7 +142,7 @@ Mermaid 표기에서 `||`는 정확히 1개, `o{`는 0개 이상, `|{`는 1개 �
 | 열 | Prisma / PostgreSQL | NULL | 제약 | 설명 |
 | --- | --- | --- | --- | --- |
 | `id` | `Int` / `INTEGER` | 불가 | PK, 자동 증가 | 기업 식별자 |
-| `name` | `String` / `VARCHAR(100)` | 불가 | 인덱스 | 기업명 |
+| `name` | `String` / `VARCHAR(100)` | 불가 | UNIQUE | 기업명 |
 | `description` | `String` / `TEXT` | 불가 |  | 기업 소개 |
 | `categoryId` | `Int` / `INTEGER` | 불가 | FK → `Category.id`, RESTRICT | 카테고리 식별자 |
 | `actualInvestment` | `BigInt` / `BIGINT` | 불가 | 인덱스 | 시드로 제공하는 실제 누적 투자 금액 |
@@ -244,7 +244,7 @@ Mermaid 표기에서 `||`는 정확히 1개, `o{`는 0개 이상, `|{`는 1개 �
 | 테이블 | 인덱스 | 사용 목적 |
 | --- | --- | --- |
 | Category | `UNIQUE(name)` | 카테고리 중복 방지 |
-| Company | `INDEX(name)` | 기업명 검색 |
+| Company | `UNIQUE(name)` | 기업명 중복 방지와 검색 |
 | Company | `INDEX(categoryId)` | 카테고리 관계 조회 |
 | Company | `INDEX(actualInvestment)` | 실제 누적 투자 금액 정렬 |
 | Company | `INDEX(revenue)` | 매출액 정렬과 순위 계산 |

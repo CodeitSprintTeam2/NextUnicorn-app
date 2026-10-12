@@ -17,7 +17,7 @@ model Category {
 
 model Company {
   id                       Int                @id @default(autoincrement())
-  name                     String             @db.VarChar(100)
+  name                     String             @unique @db.VarChar(100)
   description              String             @db.Text
   categoryId               Int
   actualInvestment         BigInt
@@ -30,7 +30,6 @@ model Company {
   comparisonsAsMyCompany   Comparison[]       @relation("MyCompany")
   comparisonTargets        ComparisonTarget[]
 
-  @@index([name])
   @@index([categoryId])
   @@index([actualInvestment])
   @@index([revenue])
