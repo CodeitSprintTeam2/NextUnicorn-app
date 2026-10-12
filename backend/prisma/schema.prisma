@@ -71,3 +71,4 @@ model ComparisonTarget {
   @@id([comparisonId, companyId])
   @@index([companyId])
 }
+
