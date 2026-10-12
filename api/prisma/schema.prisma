@@ -20,6 +20,7 @@ model Company {
   name                     String             @db.VarChar(100)
   description              String             @db.Text
   categoryId               Int
+  actualInvestment         BigInt
   revenue                  BigInt
   employees                Int
   createdAt                DateTime           @default(now())
@@ -31,6 +32,7 @@ model Company {
 
   @@index([name])
   @@index([categoryId])
+  @@index([actualInvestment])
   @@index([revenue])
   @@index([employees])
 }

@@ -72,5 +72,5 @@ Content-Type: application/json
 }
 
 ### 전체 기업 투자 현황 조회
-GET {{baseUrl}}/investment-status?page=1&limit=10&sortBy=totalInvestment&order=desc
+GET {{baseUrl}}/investment-status?page=1&limit=10&sortBy=virtualInvestment&order=desc
 Accept: application/json

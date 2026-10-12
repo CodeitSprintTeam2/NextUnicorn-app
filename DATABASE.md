@@ -4,15 +4,15 @@
 
 - PostgreSQL과 Prisma 7을 사용한다.
 - 기업 데이터는 초기 데이터로 넣고 서비스에서는 조회만 한다.
-- 투자 금액과 매출은 원 단위 정수이며 PostgreSQL `BIGINT`로 저장한다.
+- 실제 누적 투자 금액, 가상 투자 금액과 매출은 원 단위 정수이며 PostgreSQL `BIGINT`로 저장한다.
 - API로 금액을 보낼 때는 `Number.MAX_SAFE_INTEGER` 이하인지 검증한 뒤 JSON `number`로 변환한다.
 - 투자 비밀번호는 원문을 저장하지 않고 bcrypt 해시만 저장한다.
 - 가상 투자 삭제는 물리 삭제하지 않고 `Investment.deletedAt`에 삭제 시각을 기록한다.
-- 일반 조회와 합계에서는 `deletedAt IS NULL`인 투자만 사용한다.
+- 투자 목록, 페이지네이션 개수, 가상 투자 합계에는 `deletedAt IS NULL`인 투자만 포함한다.
 - 선택 횟수를 중복 저장하지 않고 비교 완료 이력을 집계한다.
 - Prisma 7의 데이터베이스 URL은 이후 구현할 Prisma config에서 관리하며 `schema.prisma`에는 넣지 않는다.
 
-투자 금액·매출·고용 인원의 음수 금지와 비교 대상 1~5개 규칙은 Prisma 스키마가 직접 표현하지 못하므로 API 검증과 비교 생성 트랜잭션에서 보장한다.
+실제 누적 투자 금액·가상 투자 금액·매출·고용 인원의 음수 금지와 비교 대상 1~5개 규칙은 Prisma 스키마가 직접 표현하지 못하므로 시드·API 검증과 비교 생성 트랜잭션에서 보장한다.
 
 ## ERD
 
@@ -36,6 +36,7 @@ erDiagram
         varchar name
         text description
         int categoryId FK
+        bigint actualInvestment
         bigint revenue
         int employees
         datetime createdAt
@@ -78,7 +79,8 @@ Mermaid 표기에서 `||`는 정확히 1개, `o{`는 0개 이상, `|{`는 1개 �
 | UK name           |                                        | FK categoryId        |
 | createdAt         |                                        | name                 |
 | updatedAt         |                                        | description          |
-+-------------------+                                        | revenue              |
++-------------------+                                        | actualInvestment     |
+                                                             | revenue              |
                                                              | employees            |
                                                              | createdAt            |
                                                              | updatedAt            |
@@ -125,6 +127,7 @@ Mermaid 표기에서 `||`는 정확히 1개, `o{`는 0개 이상, `|{`는 1개 �
 | `name` | `String` / `VARCHAR(100)` | 불가 | 인덱스 | 기업명 |
 | `description` | `String` / `TEXT` | 불가 |  | 기업 소개 |
 | `categoryId` | `Int` / `INTEGER` | 불가 | FK → `Category.id`, RESTRICT | 카테고리 식별자 |
+| `actualInvestment` | `BigInt` / `BIGINT` | 불가 | 인덱스 | 시드로 제공하는 실제 누적 투자 금액 |
 | `revenue` | `BigInt` / `BIGINT` | 불가 | 인덱스 | 매출액 |
 | `employees` | `Int` / `INTEGER` | 불가 | 인덱스 | 고용 인원 |
 | `createdAt` | `DateTime` / `TIMESTAMP` | 불가 | 기본값 현재 시각 | 생성 시각 |
@@ -195,25 +198,28 @@ Mermaid 표기에서 `||`는 정확히 1개, `o{`는 0개 이상, `|{`는 1개 �
 - 카테고리 이름을 `Company`마다 반복하지 않고 `Category`로 분리한다.
 - 기업 정보는 `Investment`, `Comparison`, `ComparisonTarget`에 중복 저장하지 않고 외래 키로 참조한다.
 - 내 기업·비교 기업 선택 횟수를 `Company`에 중복 저장하지 않고 비교 이력에서 계산한다.
-- 누적 투자 금액은 `Company`에 저장하지 않고 `deletedAt IS NULL`인 `Investment.amount`를 합산한다.
+- 실제 누적 투자 금액은 `Company.actualInvestment`에 시드 데이터로 저장한다.
+- 가상 투자 합계는 `Company`에 저장하지 않고 `deletedAt IS NULL`인 `Investment.amount`를 합산한다.
 
 ## 파생 값과 집계
 
 | 값 | 계산 기준 |
 | --- | --- |
-| 기업별 누적 투자 금액 | 활성 `Investment`의 `amount` 합계. 투자 내역이 없으면 `0` |
+| 기업별 실제 누적 투자 금액 | `Company.actualInvestment` |
+| 기업별 가상 투자 합계 | 활성 `Investment.amount` 합계. 활성 투자 내역이 없으면 `0` |
 | 내 기업 선택 횟수 | `Comparison.myCompanyId`별 행 개수 |
 | 비교 기업 선택 횟수 | `ComparisonTarget.companyId`별 행 개수 |
 | 매출액·고용 인원 순위 | `Company.revenue` 또는 `Company.employees` 정렬 결과 |
 
-파생 값은 원본 데이터와 불일치하지 않도록 별도 열에 저장하지 않는다. 조회 성능이 실제로 문제가 된 뒤에만 캐시나 집계 테이블 도입을 다시 검토한다.
+`virtualInvestment`와 선택 횟수 같은 파생 값은 원본 데이터와 불일치하지 않도록 별도 열에 저장하지 않는다. 조회 성능이 실제로 문제가 된 뒤에만 캐시나 집계 테이블 도입을 다시 검토한다. `actualInvestment`는 외부에서 주어진 실제 투자 실적의 원본 값이므로 `Company`에 저장한다.
 
 ## Soft Delete 규칙
 
 1. 투자 삭제 시 행을 삭제하지 않고 `deletedAt`에 현재 시각을 기록한다.
-2. 투자 조회, 기업별 누적 투자 금액, 투자 현황은 `deletedAt IS NULL` 조건을 사용한다.
-3. 이미 삭제된 투자에 대한 조회·수정·삭제는 존재하지 않는 투자와 동일하게 처리한다.
-4. 삭제된 투자도 비밀번호 해시를 포함한 원래 행을 보존하므로 운영 DB 접근 권한과 보존 기간은 별도 운영 정책으로 관리한다.
+2. 기업별 투자 목록 조회와 페이지네이션 개수에는 `deletedAt IS NULL`인 투자만 포함한다.
+3. 기업별 가상 투자 합계와 투자 현황의 가상 투자 금액 집계에는 `deletedAt IS NULL`인 투자만 포함한다.
+4. 이미 삭제된 투자는 목록 조회와 개별 수정·삭제 대상에서 존재하지 않는 투자와 동일하게 처리한다.
+5. 삭제된 투자도 비밀번호 해시를 포함한 원래 행을 보존하므로 운영 DB 접근 권한과 보존 기간은 별도 운영 정책으로 관리한다.
 
 ## 인덱스
 
@@ -222,9 +228,10 @@ Mermaid 표기에서 `||`는 정확히 1개, `o{`는 0개 이상, `|{`는 1개 �
 | Category | `UNIQUE(name)` | 카테고리 중복 방지 |
 | Company | `INDEX(name)` | 기업명 검색 |
 | Company | `INDEX(categoryId)` | 카테고리 관계 조회 |
+| Company | `INDEX(actualInvestment)` | 실제 누적 투자 금액 정렬 |
 | Company | `INDEX(revenue)` | 매출액 정렬과 순위 계산 |
 | Company | `INDEX(employees)` | 고용 인원 정렬과 순위 계산 |
-| Investment | `INDEX(companyId, deletedAt, createdAt)` | 기업별 활성 투자 최신순 조회 |
+| Investment | `INDEX(companyId, deletedAt, createdAt)` | 기업별 활성 투자 최신순 목록 조회 |
 | Comparison | `INDEX(myCompanyId)` | 내 기업 선택 횟수 집계 |
 | ComparisonTarget | `PRIMARY KEY(comparisonId, companyId)` | 대상 중복 방지와 비교별 대상 조회 |
 | ComparisonTarget | `INDEX(companyId)` | 비교 기업 선택 횟수 집계 |

@@ -12,7 +12,7 @@
 
 금액은 JavaScript의 안전한 정수 범위인 `Number.MAX_SAFE_INTEGER` 이하만 허용한다. 비밀번호는 투자 등록·수정·삭제 요청에서만 받고 응답에는 포함하지 않는다.
 
-응답의 `totalInvestment`는 `Company`에 저장된 열이 아니다. 해당 기업의 `deletedAt`이 `null`인 `Investment.amount` 합계를 계산해 반환하며, 투자 내역이 없으면 `0`이다.
+`actualInvestment`는 시드 데이터로 저장한 기업의 실제 누적 투자 금액이다. `virtualInvestment`는 `Company`에 저장하지 않고 해당 기업의 `deletedAt`이 `null`인 `Investment.amount`를 합산해 반환하며, 활성 가상 투자 내역이 없으면 `0`이다.
 
 ## 공통 계약
 
@@ -77,7 +77,7 @@
   "name": "코드잇",
   "description": "온라인 코딩 교육 스타트업",
   "category": "교육",
-  "totalInvestment": 5000000000,
+  "actualInvestment": 5000000000,
   "revenue": 1200000000,
   "employees": 80
 }
@@ -122,7 +122,7 @@
 | `page` | 아니요 | 1 이상의 정수 |
 | `limit` | 아니요 | 1~100의 정수 |
 | `search` | 아니요 | 기업명 검색어 |
-| `sortBy` | 아니요 | `totalInvestment`, `revenue`, `employees` |
+| `sortBy` | 아니요 | `actualInvestment`, `revenue`, `employees` |
 | `order` | 아니요 | `asc`, `desc` |
 
 #### 성공 `200 OK`
@@ -135,7 +135,7 @@
       "name": "코드잇",
       "description": "온라인 코딩 교육 스타트업",
       "category": "교육",
-      "totalInvestment": 5000000000,
+      "actualInvestment": 5000000000,
       "revenue": 1200000000,
       "employees": 80
     }
@@ -159,7 +159,7 @@
 
 `GET /api/companies/:companyId`
 
-기업 정보와 누적 투자 금액을 반환한다. 투자 목록은 별도 엔드포인트에서 조회한다.
+기업 정보와 실제 누적 투자 금액, 가상 투자 합계를 반환한다. 투자 목록은 별도 엔드포인트에서 조회한다.
 
 #### 성공 `200 OK`
 
@@ -170,7 +170,8 @@
     "name": "코드잇",
     "description": "온라인 코딩 교육 스타트업",
     "category": "교육",
-    "totalInvestment": 5000000000,
+    "actualInvestment": 5000000000,
+    "virtualInvestment": 1500000,
     "revenue": 1200000000,
     "employees": 80
   }
@@ -188,7 +189,7 @@
 
 `GET /api/companies/:companyId/investments`
 
-해당 기업이 받은 가상 투자 내역을 최신 등록순으로 페이지네이션하여 반환한다. `createdAt`이 같으면 `id` 내림차순으로 순서를 정한다.
+해당 기업이 받은 가상 투자 중 `deletedAt`이 `null`인 내역만 최신 등록순으로 페이지네이션하여 반환한다. `createdAt`이 같으면 `id` 내림차순으로 순서를 정한다. soft delete된 투자는 `data`, `meta.total`, `meta.totalPages` 계산에서 제외한다.
 
 #### Query
 
@@ -262,7 +263,7 @@
       "name": "코드잇",
       "description": "온라인 코딩 교육 스타트업",
       "category": "교육",
-      "totalInvestment": 5000000000,
+      "actualInvestment": 5000000000,
       "revenue": 1200000000,
       "employees": 80
     },
@@ -272,7 +273,7 @@
         "name": "테크스타트",
         "description": "기업용 협업 도구 스타트업",
         "category": "SaaS",
-        "totalInvestment": 3000000000,
+        "actualInvestment": 3000000000,
         "revenue": 900000000,
         "employees": 55
       }
@@ -320,7 +321,7 @@
           "name": "테크스타트",
           "description": "기업용 협업 도구 스타트업",
           "category": "SaaS",
-          "totalInvestment": 3000000000,
+          "actualInvestment": 3000000000,
           "revenue": 1500000000,
           "employees": 55
         }
@@ -332,7 +333,7 @@
           "name": "코드잇",
           "description": "온라인 코딩 교육 스타트업",
           "category": "교육",
-          "totalInvestment": 5000000000,
+          "actualInvestment": 5000000000,
           "revenue": 1200000000,
           "employees": 80
         }
@@ -373,7 +374,7 @@
         "name": "코드잇",
         "description": "온라인 코딩 교육 스타트업",
         "category": "교육",
-        "totalInvestment": 5000000000,
+        "actualInvestment": 5000000000,
         "revenue": 1200000000,
         "employees": 80
       },
@@ -485,7 +486,7 @@
 
 `DELETE /api/investments/:investmentId`
 
-행을 물리적으로 삭제하지 않고 `deletedAt`에 삭제 시각을 기록한다. 삭제된 투자는 이후 목록, 합계, 수정 및 삭제 대상에서 제외한다.
+행과 원본 내용은 물리적으로 삭제하지 않고 `deletedAt`에 삭제 시각을 기록한다. 삭제된 투자는 목록, 페이지네이션 전체 개수, `virtualInvestment`, 수정 및 삭제 대상에서 제외하며 `actualInvestment`에는 영향을 주지 않는다.
 
 #### 요청
 
@@ -513,13 +514,15 @@
 
 `GET /api/investment-status`
 
+`rank`는 선택한 `sortBy` 기준의 전체 기업 순위다. `sortBy`를 생략하면 `virtualInvestment` 내림차순을 사용한다.
+
 #### Query
 
 | 이름 | 필수 | 허용값 |
 | --- | --- | --- |
 | `page` | 아니요 | 1 이상의 정수 |
 | `limit` | 아니요 | 1~100의 정수 |
-| `sortBy` | 아니요 | `totalInvestment` |
+| `sortBy` | 아니요 | `virtualInvestment`, `actualInvestment` (기본값 `virtualInvestment`) |
 | `order` | 아니요 | `asc`, `desc` |
 
 #### 성공 `200 OK`
@@ -535,7 +538,8 @@
         "description": "온라인 코딩 교육 스타트업",
         "category": "교육"
       },
-      "totalInvestment": 1500000
+      "virtualInvestment": 1500000,
+      "actualInvestment": 5000000000
     }
   ],
   "meta": {
