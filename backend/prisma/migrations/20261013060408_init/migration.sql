@@ -1,98 +1,98 @@
 -- CreateTable
-CREATE TABLE "Category" (
+CREATE TABLE "categories" (
     "id" SERIAL NOT NULL,
     "name" VARCHAR(50) NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
 
-    CONSTRAINT "Category_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "categories_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "Company" (
+CREATE TABLE "companies" (
     "id" SERIAL NOT NULL,
     "name" VARCHAR(100) NOT NULL,
     "description" TEXT NOT NULL,
-    "categoryId" INTEGER NOT NULL,
-    "actualInvestment" BIGINT NOT NULL,
+    "category_id" INTEGER NOT NULL,
+    "actual_investment" BIGINT NOT NULL,
     "revenue" BIGINT NOT NULL,
     "employees" INTEGER NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
 
-    CONSTRAINT "Company_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "companies_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "Investment" (
+CREATE TABLE "investments" (
     "id" SERIAL NOT NULL,
-    "companyId" INTEGER NOT NULL,
-    "investorName" VARCHAR(20) NOT NULL,
+    "company_id" INTEGER NOT NULL,
+    "investor_name" VARCHAR(20) NOT NULL,
     "amount" BIGINT NOT NULL,
     "comment" VARCHAR(200) NOT NULL,
-    "passwordHash" VARCHAR(60) NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-    "deletedAt" TIMESTAMP(3),
+    "password_hash" VARCHAR(60) NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+    "deleted_at" TIMESTAMP(3),
 
-    CONSTRAINT "Investment_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "investments_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "Comparison" (
+CREATE TABLE "comparisons" (
     "id" SERIAL NOT NULL,
-    "myCompanyId" INTEGER NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "my_company_id" INTEGER NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT "Comparison_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "comparisons_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "ComparisonTarget" (
-    "comparisonId" INTEGER NOT NULL,
-    "companyId" INTEGER NOT NULL,
+CREATE TABLE "comparison_targets" (
+    "comparison_id" INTEGER NOT NULL,
+    "company_id" INTEGER NOT NULL,
 
-    CONSTRAINT "ComparisonTarget_pkey" PRIMARY KEY ("comparisonId","companyId")
+    CONSTRAINT "comparison_targets_pkey" PRIMARY KEY ("comparison_id","company_id")
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Category_name_key" ON "Category"("name");
+CREATE UNIQUE INDEX "categories_name_key" ON "categories"("name");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Company_name_key" ON "Company"("name");
+CREATE UNIQUE INDEX "companies_name_key" ON "companies"("name");
 
 -- CreateIndex
-CREATE INDEX "Company_categoryId_idx" ON "Company"("categoryId");
+CREATE INDEX "companies_category_id_idx" ON "companies"("category_id");
 
 -- CreateIndex
-CREATE INDEX "Company_actualInvestment_idx" ON "Company"("actualInvestment");
+CREATE INDEX "companies_actual_investment_idx" ON "companies"("actual_investment");
 
 -- CreateIndex
-CREATE INDEX "Company_revenue_idx" ON "Company"("revenue");
+CREATE INDEX "companies_revenue_idx" ON "companies"("revenue");
 
 -- CreateIndex
-CREATE INDEX "Company_employees_idx" ON "Company"("employees");
+CREATE INDEX "companies_employees_idx" ON "companies"("employees");
 
 -- CreateIndex
-CREATE INDEX "Investment_companyId_deletedAt_createdAt_idx" ON "Investment"("companyId", "deletedAt", "createdAt");
+CREATE INDEX "investments_company_id_deleted_at_created_at_idx" ON "investments"("company_id", "deleted_at", "created_at");
 
 -- CreateIndex
-CREATE INDEX "Comparison_myCompanyId_idx" ON "Comparison"("myCompanyId");
+CREATE INDEX "comparisons_my_company_id_idx" ON "comparisons"("my_company_id");
 
 -- CreateIndex
-CREATE INDEX "ComparisonTarget_companyId_idx" ON "ComparisonTarget"("companyId");
+CREATE INDEX "comparison_targets_company_id_idx" ON "comparison_targets"("company_id");
 
 -- AddForeignKey
-ALTER TABLE "Company" ADD CONSTRAINT "Company_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "Category"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "companies" ADD CONSTRAINT "companies_category_id_fkey" FOREIGN KEY ("category_id") REFERENCES "categories"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Investment" ADD CONSTRAINT "Investment_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "Company"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "investments" ADD CONSTRAINT "investments_company_id_fkey" FOREIGN KEY ("company_id") REFERENCES "companies"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Comparison" ADD CONSTRAINT "Comparison_myCompanyId_fkey" FOREIGN KEY ("myCompanyId") REFERENCES "Company"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "comparisons" ADD CONSTRAINT "comparisons_my_company_id_fkey" FOREIGN KEY ("my_company_id") REFERENCES "companies"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "ComparisonTarget" ADD CONSTRAINT "ComparisonTarget_comparisonId_fkey" FOREIGN KEY ("comparisonId") REFERENCES "Comparison"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "comparison_targets" ADD CONSTRAINT "comparison_targets_comparison_id_fkey" FOREIGN KEY ("comparison_id") REFERENCES "comparisons"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "ComparisonTarget" ADD CONSTRAINT "ComparisonTarget_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "Company"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "comparison_targets" ADD CONSTRAINT "comparison_targets_company_id_fkey" FOREIGN KEY ("company_id") REFERENCES "companies"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

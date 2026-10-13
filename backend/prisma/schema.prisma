@@ -9,21 +9,23 @@ datasource db {
 model Category {
   id        Int       @id @default(autoincrement())
   name      String    @unique @db.VarChar(50)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
   companies Company[]
+
+  @@map("categories")
 }
 
 model Company {
   id                       Int                @id @default(autoincrement())
   name                     String             @unique @db.VarChar(100)
   description              String             @db.Text
-  categoryId               Int
-  actualInvestment         BigInt
+  categoryId               Int                @map("category_id")
+  actualInvestment         BigInt             @map("actual_investment")
   revenue                  BigInt
   employees                Int
-  createdAt                DateTime           @default(now())
-  updatedAt                DateTime           @updatedAt
+  createdAt                DateTime           @default(now()) @map("created_at")
+  updatedAt                DateTime           @updatedAt @map("updated_at")
   category                 Category           @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   investments              Investment[]
   comparisonsAsMyCompany   Comparison[]       @relation("MyCompany")
@@ -33,40 +35,43 @@ model Company {
   @@index([actualInvestment])
   @@index([revenue])
   @@index([employees])
+  @@map("companies")
 }
 
 model Investment {
   id           Int       @id @default(autoincrement())
-  companyId    Int
-  investorName String    @db.VarChar(20)
+  companyId    Int       @map("company_id")
+  investorName String    @map("investor_name") @db.VarChar(20)
   amount       BigInt
   comment      String    @db.VarChar(200)
-  passwordHash String    @db.VarChar(60)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  deletedAt    DateTime?
+  passwordHash String    @map("password_hash") @db.VarChar(60)
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
   company      Company   @relation(fields: [companyId], references: [id], onDelete: Restrict)
 
   @@index([companyId, deletedAt, createdAt])
+  @@map("investments")
 }
 
 model Comparison {
   id          Int                @id @default(autoincrement())
-  myCompanyId Int
-  createdAt   DateTime           @default(now())
+  myCompanyId Int                @map("my_company_id")
+  createdAt   DateTime           @default(now()) @map("created_at")
   myCompany   Company            @relation("MyCompany", fields: [myCompanyId], references: [id], onDelete: Restrict)
   targets     ComparisonTarget[]
 
   @@index([myCompanyId])
+  @@map("comparisons")
 }
 
 model ComparisonTarget {
-  comparisonId Int
-  companyId    Int
+  comparisonId Int        @map("comparison_id")
+  companyId    Int        @map("company_id")
   comparison   Comparison @relation(fields: [comparisonId], references: [id], onDelete: Cascade)
   company      Company    @relation(fields: [companyId], references: [id], onDelete: Restrict)
 
   @@id([comparisonId, companyId])
   @@index([companyId])
+  @@map("comparison_targets")
 }
-

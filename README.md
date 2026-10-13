@@ -325,6 +325,7 @@ docker compose down --volumes
 | 2026-10-08 | 개발 이슈는 화면·API·DB를 함께 완성하는 기능별 세로 단위로 나눈다. | 각 이슈가 배포 환경에서 사용자에게 동작하는 결과를 만들게 하기 위해서다. | 팀 역할이나 작업 흐름을 다시 나눌 때 |
 | 2026-10-12 | 개발자별 로컬 PostgreSQL과 Render 배포 PostgreSQL을 분리하고 스테이징 환경은 두지 않는다. |  |  |
 | 2026-10-12 | Netlify 화면에서 Render 서버로 요청할 때 Express의 `cors` 패키지로 현재 환경의 `CLIENT_ORIGIN`만 허용한다. | 화면과 서버의 주소가 달라 CORS 처리가 필요하기 때문이다. |  |
+| 2026-10-13 | DB 테이블과 컬럼 이름은 snake_case, Prisma 모델과 코드 필드는 camelCase를 사용한다. | 협의된 컨벤션 사항 |  |
 
 ## 공통 정렬 및 순위 규칙
 
