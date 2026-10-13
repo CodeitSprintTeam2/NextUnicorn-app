@@ -1,0 +1,23 @@
+databases:
+  - name: view-my-startup-db
+    databaseName: view_my_startup
+    user: view_my_startup
+    postgresMajorVersion: "18"
+
+services:
+  - type: web
+    name: view-my-startup-backend
+    runtime: node
+    plan: free
+    buildCommand: npm ci && npm run prisma:generate --workspace backend
+    startCommand: npm start --workspace backend
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: 24
+      - key: DATABASE_URL
+        fromDatabase:
+          name: view-my-startup-db
+          property: connectionString
+      - key: CLIENT_ORIGIN
+        sync: false

@@ -1,0 +1,16 @@
+{
+  "name": "view-my-startup",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "engines": {
+    "node": "24.x"
+  },
+  "scripts": {
+    "dev:backend": "npm run dev --workspace backend",
+    "dev:frontend": "npm run dev --workspace frontend",
+    "build:frontend": "npm run build --workspace frontend"
+  }
+}
