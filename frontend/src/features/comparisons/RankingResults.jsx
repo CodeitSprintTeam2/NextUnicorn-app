@@ -1,0 +1,3 @@
+import { CompanyDataTable } from "../../components/CompanyDataTable.jsx";
+import { formatKoreanAmount } from "../../utils/amount.js";
+export function RankingResults({companies=[]}){const rows=companies.map(x=>({...x.company,rank:x.rank}));const columns=[{key:"rank",label:"순위",width:"60px"},{key:"name",label:"기업 명"},{key:"description",label:"기업 소개"},{key:"category",label:"카테고리"},{key:"actualInvestment",label:"누적 투자 금액",render:r=>formatKoreanAmount(r.actualInvestment)},{key:"revenue",label:"매출액",render:r=>formatKoreanAmount(r.revenue)},{key:"employees",label:"고용 인원",render:r=>`${r.employees}명`}];return <CompanyDataTable rows={rows} columns={columns} rowHref={c=>`/companies/${c.id}`}/>;}
