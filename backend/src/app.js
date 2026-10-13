@@ -5,12 +5,17 @@ import { env } from "./config/env.js";
 
 export const app = express();
 
-const allowedOrigins = [env.clientOrigin];
+// 실제 배포 주소
+const allowedOrigins = [
+  "https://nextunicorn-app.netlify.app",
+];
 
+// CORS 허용 여부 확인
 function isAllowedOrigin(origin) {
   if (!origin) return true;
 
-  if (allowedOrigins.includes(origin)) {
+  // 실제 배포 주소 및 환경 변수에 설정된 주소 허용
+  if (allowedOrigins.includes(origin) || origin === env.clientOrigin) {
     return true;
   }
 
