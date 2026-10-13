@@ -1,0 +1,9 @@
+.comparison-description {
+  display: -webkit-box;
+  max-width: 280px;
+  overflow: hidden;
+  color: #bbb;
+  line-height: 1.4;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}

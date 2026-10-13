@@ -1,0 +1,89 @@
+.investment-form {
+  display: grid;
+  gap: 14px;
+}
+
+.investment-field {
+  display: grid;
+  min-width: 0;
+  gap: 6px;
+  color: #eee;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.investment-field input,
+.investment-field textarea {
+  width: 100%;
+  min-height: 38px;
+  padding: 9px 11px;
+  border: 1px solid #4b4b4b;
+  border-radius: 7px;
+  outline: 0;
+  background: #1b1b1b;
+  color: #ededed;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.investment-field textarea {
+  min-height: 74px;
+  resize: vertical;
+}
+
+.investment-field input:focus,
+.investment-field textarea:focus,
+.investment-field__password:focus-within {
+  border-color: var(--color-accent);
+}
+
+.investment-field input[aria-invalid="true"],
+.investment-field textarea[aria-invalid="true"],
+.investment-field__password.has-error {
+  border-color: var(--color-danger);
+}
+
+.investment-field__password {
+  display: flex;
+  min-height: 38px;
+  align-items: center;
+  border: 1px solid #4b4b4b;
+  border-radius: 7px;
+  background: #1b1b1b;
+}
+
+.investment-field__password input {
+  min-width: 0;
+  flex: 1;
+  border: 0;
+  background: transparent;
+}
+
+.investment-field__password button {
+  padding: 5px 10px;
+  border: 0;
+  background: transparent;
+  color: #aaa;
+  font-size: 10px;
+}
+
+.investment-field__error,
+.investment-form__server-error {
+  margin: 0;
+  color: var(--color-danger);
+  font-size: 11px;
+  font-weight: 400;
+}
+
+.investment-form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+@media (max-width: 520px) {
+  .investment-form__actions .button {
+    flex: 1;
+  }
+}
