@@ -1,20 +1,29 @@
+
 import cors from "cors";
 import express from "express";
 import { env } from "./config/env.js";
 
 export const app = express();
 
-// CORS 허용 주소
-const allowedOrigins = [
-  env.clientOrigin,
-  "https://deploy-preview-19--viewmystartup2.netlify.app",
-];
+const allowedOrigins = [env.clientOrigin];
 
-// CORS 설정
+function isAllowedOrigin(origin) {
+  if (!origin) return true;
+
+  if (allowedOrigins.includes(origin)) {
+    return true;
+  }
+
+  // Netlify PR 미리보기 주소 허용
+  return /^https:\/\/deploy-preview-\d+--nextunicorn-app\.netlify\.app$/.test(
+    origin,
+  );
+}
+
 app.use(
   cors({
     origin(origin, callback) {
-      callback(null, !origin || allowedOrigins.includes(origin));
+      callback(null, isAllowedOrigin(origin));
     },
     methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type"],
@@ -22,10 +31,8 @@ app.use(
   }),
 );
 
-// JSON 요청 처리
 app.use(express.json());
 
-// 서버 상태 확인 API
 app.get("/api/health", (request, response) => {
   response.status(200).json({
     data: {
@@ -34,7 +41,6 @@ app.get("/api/health", (request, response) => {
   });
 });
 
-// 공통 에러 처리
 app.use((error, request, response, next) => {
   console.error(error);
   response.status(500).json({
