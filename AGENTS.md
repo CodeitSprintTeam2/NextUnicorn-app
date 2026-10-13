@@ -5,7 +5,7 @@
 ## 프로젝트
 
 - 부트캠프 수강생 4명이 만드는 「View My Startup」이다. 2026-10-15에 핵심 흐름을 시연하고 2026-10-21에 기능을 완성한다.
-- 화면은 Netlify, 서버는 Render, 배포 DB는 Render PostgreSQL에 둔다. 개발자는 각자의 로컬 PostgreSQL을 사용한다.
+- 화면은 Netlify, 서버는 Render, 배포 DB는 Render PostgreSQL 18에 둔다. 개발자는 각자의 로컬 PostgreSQL 18을 사용한다.
 - 주제 설명서는 `brief.md`에 있고, 이 파일은 고치지 않는다.
 - 명세는 `README.md`(기술·기능·화면·범위·공통 정책·결정 기록), `API.md`(요청·응답 계약), `api.http`(예시 요청), `backend/prisma/schema.prisma`(테이블), `issues.md`(이슈와 완료 기준)다.
 - 코드와 명세가 다르면 명세를 따른다.
@@ -13,7 +13,7 @@
 ## 기술
 
 - 패키지 관리자는 npm을 사용한다.
-- 서버는 `backend` 폴더에 둔다. Node 24·Express 5·Prisma 7·PostgreSQL이고 ES 모듈(`import`/`export`)만 쓴다.
+- 서버는 `backend` 폴더에 둔다. Node 24·Express 5·Prisma 7·PostgreSQL 18이고 ES 모듈(`import`/`export`)만 쓴다.
 - 비밀번호 해시는 `bcrypt`, CORS는 Express의 `cors` 패키지로 처리한다.
 - 화면은 `frontend` 폴더에 둔다. Vite·React·React Router·axios이고 JavaScript로 쓴다.
 - 화면은 `VITE_API_BASE_URL`, 서버는 `DATABASE_URL`과 `CLIENT_ORIGIN` 환경 변수를 사용한다.

@@ -1,0 +1,86 @@
+:root {
+  font-family: Inter, Pretendard, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #171719;
+  background: #f5f6f8;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+.page-shell {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 24px;
+}
+
+.status-card {
+  width: min(100%, 560px);
+  padding: 48px;
+  border: 1px solid #e1e3e8;
+  border-radius: 20px;
+  background: #ffffff;
+  box-shadow: 0 16px 44px rgb(23 23 25 / 8%);
+}
+
+.eyebrow {
+  margin: 0 0 12px;
+  color: #6c5ce7;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+h1 {
+  margin: 0 0 28px;
+  font-size: clamp(32px, 8vw, 52px);
+  letter-spacing: -0.04em;
+}
+
+.server-status {
+  display: inline-flex;
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: #eef0f4;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.server-status--connected {
+  color: #176b3a;
+  background: #e8f7ee;
+}
+
+.server-status--error {
+  color: #a12622;
+  background: #fff0ef;
+}
+
+.description {
+  margin: 20px 0 0;
+  color: #62646b;
+  line-height: 1.7;
+}
+
+@media (max-width: 520px) {
+  .status-card {
+    padding: 32px 24px;
+  }
+}

@@ -2,7 +2,7 @@
 
 ## 설계 원칙
 
-- PostgreSQL과 Prisma 7을 사용한다.
+- PostgreSQL 18과 Prisma 7을 사용한다.
 - 기업 데이터는 초기 데이터로 넣고 서비스에서는 조회만 한다.
 - 실제 누적 투자 금액, 가상 투자 금액과 매출은 원 단위 정수이며 PostgreSQL `BIGINT`로 저장한다.
 - API로 금액을 보낼 때는 정밀도 손실을 막기 위해 원 단위의 10진수 JSON `string`으로 변환한다.
@@ -18,8 +18,8 @@
 
 | 환경 | 데이터베이스 | `DATABASE_URL` 위치 |
 | --- | --- | --- |
-| 개발 | 개발자별 로컬 PostgreSQL | `backend/.env` |
-| 배포 | Render PostgreSQL | Render 환경 변수 |
+| 개발 | 개발자별 로컬 PostgreSQL 18 | `backend/.env` |
+| 배포 | Render PostgreSQL 18 | Render 환경 변수 |
 
 - 개발 DB와 배포 DB는 물리적으로 분리하고 서로 다른 `DATABASE_URL`을 사용한다.
 - 두 환경은 `backend/prisma/schema.prisma`와 저장소에 커밋된 마이그레이션 파일을 공통으로 사용한다.
