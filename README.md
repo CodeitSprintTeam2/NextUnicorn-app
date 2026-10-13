@@ -18,6 +18,75 @@
 
 README 기술 표에 없는 패키지는 사용하기 전에 팀의 합의를 받는다.
 
+## 폴더 구조
+
+프론트엔드와 백엔드는 기능별 코드를 한곳에서 찾을 수 있도록 기능 중심 구조를 사용한다. 아래 구조는 기능을 구현할 때 따를 권장 위치이며, 사용하지 않는 파일이나 폴더를 미리 만들지 않는다.
+
+### 프론트엔드
+
+```text
+frontend/src/
+├── api/
+│   └── client.js
+├── components/
+├── hooks/
+├── utils/
+├── features/
+│   ├── companies/
+│   ├── comparisons/
+│   └── investments/
+├── pages/
+├── App.jsx
+└── main.jsx
+```
+
+- `api`에는 axios 인스턴스처럼 모든 기능에서 공유하는 API 설정을 둔다.
+- `components`, `hooks`, `utils`에는 둘 이상의 기능에서 실제로 함께 사용하는 코드만 둔다.
+- `features`에는 기업, 비교, 투자처럼 기능별 UI와 API 호출, 훅, 비즈니스 로직을 모은다.
+- `pages`에는 React Router의 주소와 직접 연결되는 페이지 컴포넌트를 둔다. 페이지는 필요한 기능을 조합하고 세부 로직은 해당 `features` 폴더에 둔다.
+- 기능 폴더는 처음에는 파일을 펼쳐 둔 flat 구조로 시작한다. 기능 내부의 컴포넌트가 많아질 때만 해당 기능 아래에 `components` 같은 하위 폴더를 만든다.
+- 프로젝트는 JavaScript를 사용하므로 일반 코드는 `.js`, JSX를 포함한 코드는 `.jsx`로 작성한다. TypeScript 타입 파일은 만들지 않는다.
+
+### 백엔드
+
+```text
+backend/src/
+├── config/
+│   └── env.js
+├── lib/
+│   └── prisma.js
+├── middlewares/
+├── utils/
+├── features/
+│   ├── companies/
+│   │   ├── companies.routes.js
+│   │   ├── companies.controller.js
+│   │   ├── companies.service.js
+│   │   ├── companies.repository.js
+│   │   └── index.js
+│   ├── comparisons/
+│   └── investments/
+├── app.js
+└── server.js
+```
+
+- `config`에는 환경 변수처럼 실행 환경에 관한 설정을 둔다.
+- `lib`에는 Prisma Client처럼 여러 기능에서 공유하는 외부 도구의 초기화 코드를 둔다.
+- `middlewares`와 `utils`에는 둘 이상의 기능에서 실제로 공유하는 Express 미들웨어와 유틸리티만 둔다.
+- `features`에는 API를 기업, 비교, 투자 기능 단위로 나누어 관련 코드를 모은다.
+- `routes`는 주소와 HTTP 메서드를 연결하고, `controller`는 요청을 받아 응답을 만든다.
+- `service`는 입력 검증과 비즈니스 규칙을 처리하고, `repository`는 Prisma를 통한 DB 접근을 담당한다.
+- `app.js`는 공통 미들웨어와 기능별 라우터를 조립하고, `server.js`는 서버 실행과 정상 종료를 담당한다.
+- 각 기능은 필요한 역할의 파일만 만든다. 로직이 단순한데도 `controller`, `service`, `repository`를 형식적으로 모두 만들지 않는다.
+
+### 공통 원칙
+
+- 한 기능에서만 사용하는 코드는 전역 공통 폴더로 옮기지 않고 해당 기능 폴더에 둔다.
+- 둘 이상의 기능에서 같은 역할로 사용되는 것이 확인됐을 때만 공통 폴더로 이동한다.
+- 다른 기능의 내부 구현을 직접 참조하지 않는다. 기능 사이에 공유해야 하는 인터페이스가 생기면 각 기능의 `index.js`에서 필요한 항목만 공개한다.
+- 로그인·회원가입과 새로고침 후 선택 상태 복원은 이번 프로젝트 범위에 포함하지 않는다. 폴더 구조 예시에도 범위 밖 기능을 추가하지 않는다.
+- 폴더 구조 때문에 API의 요청·응답 필드, 실패 문구 또는 데이터베이스 계약을 변경하지 않는다.
+
 ## 로컬 실행
 
 Node.js 24와 로컬 PostgreSQL 18을 준비한 뒤 저장소 최상위에서 의존성을 설치한다.
@@ -256,6 +325,7 @@ docker compose down --volumes
 | 2026-10-08 | 개발 이슈는 화면·API·DB를 함께 완성하는 기능별 세로 단위로 나눈다. | 각 이슈가 배포 환경에서 사용자에게 동작하는 결과를 만들게 하기 위해서다. | 팀 역할이나 작업 흐름을 다시 나눌 때 |
 | 2026-10-12 | 개발자별 로컬 PostgreSQL과 Render 배포 PostgreSQL을 분리하고 스테이징 환경은 두지 않는다. |  |  |
 | 2026-10-12 | Netlify 화면에서 Render 서버로 요청할 때 Express의 `cors` 패키지로 현재 환경의 `CLIENT_ORIGIN`만 허용한다. | 화면과 서버의 주소가 달라 CORS 처리가 필요하기 때문이다. |  |
+| 2026-10-13 | DB 테이블과 컬럼 이름은 snake_case, Prisma 모델과 코드 필드는 camelCase를 사용한다. | 협의된 컨벤션 사항 |  |
 
 ## 공통 정렬 및 순위 규칙
 

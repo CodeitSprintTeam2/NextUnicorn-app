@@ -14,6 +14,7 @@
 
 - 패키지 관리자는 npm을 사용한다.
 - 서버는 `backend` 폴더에 둔다. Node 24·Express 5·Prisma 7·PostgreSQL 18이고 ES 모듈(`import`/`export`)만 쓴다.
+- DB 테이블과 컬럼 이름은 snake_case로 작성하고, Prisma 모델과 코드 필드는 camelCase를 유지한다. Prisma 스키마에서 `@@map`과 `@map`으로 매핑한다.
 - 비밀번호 해시는 `bcrypt`, CORS는 Express의 `cors` 패키지로 처리한다.
 - 화면은 `frontend` 폴더에 둔다. Vite·React·React Router·axios이고 JavaScript로 쓴다.
 - 화면은 `VITE_API_BASE_URL`, 서버는 `DATABASE_URL`과 `CLIENT_ORIGIN` 환경 변수를 사용한다.
