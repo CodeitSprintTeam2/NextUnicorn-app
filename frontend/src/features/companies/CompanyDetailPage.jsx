@@ -1,21 +1,69 @@
-import { useEffect,useMemo,useState } from "react";
-import { Link,useParams } from "react-router-dom";
-import { classifyApiError } from "../../api/errors.js";
-import { CompanyDataTable } from "../../components/CompanyDataTable.jsx";
-import { CompanyMark } from "../../components/CompanyMark.jsx";
+import { useState } from "react";
+import { Link, useParams } from "react-router-dom";
+import { QUERY_STATE, canRetryQuery } from "../../api/queryState.js";
 import { FeedbackState } from "../../components/FeedbackState.jsx";
-import { Pagination } from "../../components/Pagination.jsx";
-import { formatKoreanAmount } from "../../utils/amount.js";
-import { getCompany,listCompanyInvestments } from "./companies.api.js";
+import { PageHeading } from "../../components/PageHeading.jsx";
+import { FIRST_PAGE } from "../../utils/pagination.js";
+import { ROUTES } from "../../utils/routes.js";
 import { InvestmentDialogs } from "../investments/index.js";
-import "./CompanyDetailPage.css";
-const LIMIT=10;
-export function CompanyDetailPage(){const {companyId}=useParams();const [company,setCompany]=useState({state:"loading",value:null,message:""});const [list,setList]=useState({state:"loading",rows:[],meta:null,message:""});const [page,setPage]=useState(1);const [refresh,setRefresh]=useState(0);const [mode,setMode]=useState(null);const [investment,setInvestment]=useState(null);
- useEffect(()=>{let active=true;setCompany({state:"loading",value:null,message:""});getCompany(companyId).then(r=>{if(active)setCompany({state:"ready",value:r.data?.data??r.data,message:""});}).catch(e=>{if(active){const f=classifyApiError(e);setCompany({state:f.kind==="unavailable"?"unavailable":"error",value:null,message:f.message});}});return()=>{active=false;};},[companyId,refresh]);
- useEffect(()=>{let active=true;setList(r=>({...r,state:"loading",message:""}));listCompanyInvestments(companyId,{page,limit:LIMIT}).then(r=>{if(active)setList({state:r.data?.length?"ready":"empty",rows:r.data??[],meta:r.meta,message:""});}).catch(e=>{if(active){const f=classifyApiError(e);setList({state:f.kind==="unavailable"?"unavailable":"error",rows:[],meta:null,message:f.message});}});return()=>{active=false;};},[companyId,page,refresh]);
- const columns=useMemo(()=>[{key:"rank",label:"순위",width:"56px",render:(_,i)=>(page-1)*LIMIT+i+1},{key:"name",label:"투자자 이름",width:"150px",render:r=>r.investorName},{key:"amount",label:"투자 금액",width:"130px",render:r=>formatKoreanAmount(r.amount)},{key:"comment",label:"투자 코멘트",render:r=><span className="investment-comment">{r.comment}</span>},{key:"actions",label:"",width:"56px",render:r=><details className="investment-menu"><summary aria-label={`${r.investorName} 투자 내역 메뉴`}>⋮</summary><div><button onClick={e=>{e.currentTarget.closest("details").open=false;setInvestment(r);setMode("update");}}>수정하기</button><button onClick={e=>{e.currentTarget.closest("details").open=false;setInvestment(r);setMode("delete");}}>삭제하기</button></div></details>}],[page]);
- if(company.state!=="ready")return <section><div className="page-heading"><h1 className="page-title">기업 상세</h1></div><FeedbackState state={company.state} message={company.message||undefined} onRetry={()=>setRefresh(x=>x+1)}/></section>;
- const c=company.value;
- const investmentRows=list.rows.map(r=>({...r,name:r.investorName,description:r.comment}));
- return <section><p className="detail-back"><Link to="/companies">‹ 전체 스타트업 목록</Link></p><header className="company-profile"><CompanyMark company={c} size="lg"/><div><h1>{c.name}</h1><p>{c.category}</p></div></header><div className="company-metrics">{[["누적 투자 금액",formatKoreanAmount(c.actualInvestment)],["매출액",formatKoreanAmount(c.revenue)],["고용 인원",`${c.employees}명`]].map(([l,v])=><div className="company-metric" key={l}><span>{l}</span><strong>{v}</strong></div>)}</div><section className="company-about"><h2>기업 소개</h2><p>{c.description}</p></section><section className="company-investments"><div className="company-investments__heading"><div><h2>View My Startup에서 받은 투자</h2><strong>총 {formatKoreanAmount(c.virtualInvestment)}</strong></div><button className="button" onClick={()=>{setInvestment(null);setMode("create");}}>기업에 투자하기</button></div>{list.state==="ready"?<><CompanyDataTable rows={investmentRows} columns={columns}/><Pagination page={list.meta?.page??page} totalPages={list.meta?.totalPages??0} onChange={setPage}/></>:list.state==="empty"?<FeedbackState state="empty" compact title="아직 투자 내역이 없어요" message="이 기업에 첫 가상 투자를 등록해 보세요."/>:<FeedbackState state={list.state} message={list.message||undefined} compact={list.state==="loading"} onRetry={()=>setRefresh(x=>x+1)}/>}</section><InvestmentDialogs company={c} mode={mode} investment={investment} onClose={()=>setMode(null)} onChanged={()=>{setPage(1);setRefresh(x=>x+1);}}/></section>;
+import { CompanyInvestments } from "./components/CompanyInvestments.jsx";
+import { CompanyProfile } from "./components/CompanyProfile.jsx";
+import { useCompanyDetailData } from "./useCompanyDetailData.js";
+import styles from "./CompanyDetailPage.module.css";
+
+export function CompanyDetailPage() {
+  const { companyId } = useParams();
+  // A company change starts a new detail session, including its page and dialogs.
+  return <CompanyDetail key={companyId} companyId={companyId} />;
+}
+
+function CompanyDetail({ companyId }) {
+  const [page, setPage] = useState(FIRST_PAGE);
+  const [dialog, setDialog] = useState(null);
+  const { company, investments, refresh } = useCompanyDetailData(companyId, page);
+
+  function openInvestmentDialog(mode, investment) {
+    setDialog({ mode, investment });
+  }
+
+  function handleInvestmentChanged() {
+    setPage(FIRST_PAGE);
+    refresh();
+  }
+
+  if (company.state !== QUERY_STATE.ready) {
+    return (
+      <section>
+        <PageHeading title="기업 상세" />
+        <FeedbackState
+          state={company.state}
+          message={company.message || undefined}
+          onRetry={canRetryQuery(company.state) ? refresh : undefined}
+        />
+      </section>
+    );
+  }
+
+  return (
+    <section>
+      <p className={styles.back}>
+        <Link to={ROUTES.companies}>‹ 전체 스타트업 목록</Link>
+      </p>
+      <CompanyProfile company={company.value} />
+      <CompanyInvestments
+        company={company.value}
+        result={investments}
+        page={page}
+        onPageChange={setPage}
+        onEdit={openInvestmentDialog}
+      />
+      <InvestmentDialogs
+        company={company.value}
+        mode={dialog?.mode}
+        investment={dialog?.investment}
+        onClose={() => setDialog(null)}
+        onChanged={handleInvestmentChanged}
+      />
+    </section>
+  );
 }

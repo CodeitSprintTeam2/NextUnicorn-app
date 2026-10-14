@@ -1,1 +1,13 @@
-:root{color-scheme:dark;--page:#131313;--surface:#212121;--surface-raised:#282828;--surface-header:#2e2e2e;--border:#333;--muted:#999;--text:#d8d8d8;--accent:#eb5230;--danger:#ff7865;--radius:7px}
+:root {
+  color-scheme: dark;
+  --page: #131313;
+  --surface: #212121;
+  --surface-raised: #282828;
+  --surface-header: #2e2e2e;
+  --border: #333;
+  --muted: #999;
+  --text: #d8d8d8;
+  --accent: #eb5230;
+  --danger: #ff7865;
+  --radius: 7px;
+}

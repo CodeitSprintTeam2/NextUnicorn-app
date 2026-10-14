@@ -1,1 +1,0 @@
-.pagination{display:flex;justify-content:center;gap:5px;margin:20px 0}.pagination button{min-width:30px;height:30px;border:0;border-radius:5px;background:transparent;color:#aaa}.pagination button:hover:not(:disabled),.pagination button.is-active{background:#333;color:#fff}.pagination button:disabled{opacity:.35}

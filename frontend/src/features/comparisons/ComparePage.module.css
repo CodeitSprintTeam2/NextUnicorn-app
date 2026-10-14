@@ -1,0 +1,183 @@
+.myCompanyCard {
+  display: grid;
+  width: 100%;
+  min-height: 190px;
+  place-content: center;
+  justify-items: center;
+  gap: 8px;
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.myCompanyCard strong, .companyCard strong,
+.myCompanyResult strong {
+  font-size: 12px;
+}
+
+.myCompanyCard small, .companyCard small,
+.myCompanyResult small {
+  color: #999;
+  font-size: 10px;
+}
+
+.addMark {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border-radius: 50%;
+  background: #eee;
+  color: #333;
+  font-size: 24px;
+}
+
+.selection {
+  margin-top: 22px;
+}
+
+.sectionHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.sectionHeading h2 {
+  margin: 0;
+  color: #eee;
+  font-size: 14px;
+}
+
+.sectionHeading > button {
+  min-height: 31px;
+  font-size: 11px;
+}
+
+.resultSort {
+  width: 230px;
+  min-height: 34px;
+  margin: 0;
+  background: #202020;
+}
+
+.resultSort select {
+  font-size: 11px;
+}
+
+.empty {
+  width: 100%;
+  min-height: 145px;
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: #999;
+  line-height: 1.7;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.companyCard {
+  position: relative;
+  display: grid;
+  min-height: 145px;
+  place-content: center;
+  justify-items: center;
+  gap: 7px;
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--surface);
+  text-align: center;
+}
+
+.companyCard > button {
+  position: absolute;
+  top: 5px;
+  right: 8px;
+  border: 0;
+  background: none;
+  color: #aaa;
+  font-size: 18px;
+}
+
+.companyCard strong {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.addCard {
+  border: 1px dashed #4b4b4b;
+  color: #aaa;
+  font-size: 20px;
+}
+
+.submit {
+  display: flex;
+  justify-content: center;
+  margin: 20px 0;
+}
+
+.submit > button {
+  min-width: 150px;
+}
+
+.error {
+  color: var(--danger);
+  text-align: center;
+}
+
+.myCompanyResult {
+  display: grid;
+  min-height: 128px;
+  place-content: center;
+  justify-items: center;
+  gap: 6px;
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.resultSection {
+  margin-top: 20px;
+}
+
+.rank {
+  margin-left: 10px;
+  color: var(--accent);
+  font-size: 11px;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+@media (max-width: 700px) {
+  .myCompanyCard {
+    min-height: 156px;
+  }
+
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 440px) {
+  .sectionHeading {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .resultSort {
+    max-width: none;
+    width: 100%;
+  }
+}

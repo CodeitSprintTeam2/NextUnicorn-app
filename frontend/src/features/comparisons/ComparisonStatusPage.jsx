@@ -1,9 +1,80 @@
-import { useEffect,useMemo,useState } from "react";
-import { classifyApiError } from "../../api/errors.js";
+import { useState } from "react";
+import { QUERY_STATE, canRetryQuery } from "../../api/queryState.js";
 import { CompanyDataTable } from "../../components/CompanyDataTable.jsx";
 import { FeedbackState } from "../../components/FeedbackState.jsx";
+import { PageHeading } from "../../components/PageHeading.jsx";
 import { Pagination } from "../../components/Pagination.jsx";
+import { SortSelect } from "../../components/SortSelect.jsx";
+import { usePaginatedQuery } from "../../hooks/usePaginatedQuery.js";
+import { FIRST_PAGE, getRowNumber } from "../../utils/pagination.js";
+import { companyDetailPath } from "../../utils/routes.js";
+import { getSortParams } from "../../utils/sort.js";
+import { COMPANY_IDENTITY_COLUMNS } from "../../components/companyTable.js";
+import { COMPARISON_STATUS_SORT_OPTIONS } from "./comparison.constants.js";
 import { getComparisonStatus } from "./comparisons.api.js";
-import "./StatusPages.css";
-const SORT_OPTIONS=[{value:"myCompanySelections:desc",label:"내 기업 선택 횟수 높은 순"},{value:"myCompanySelections:asc",label:"내 기업 선택 횟수 낮은 순"},{value:"comparisonSelections:desc",label:"비교 기업 선택 횟수 높은 순"},{value:"comparisonSelections:asc",label:"비교 기업 선택 횟수 낮은 순"}];
-export function ComparisonStatusPage(){const [page,setPage]=useState(1);const [sort,setSort]=useState(SORT_OPTIONS[0].value);const [retry,setRetry]=useState(0);const [result,setResult]=useState({state:"loading",rows:[],meta:null,message:""});const [sortBy,order]=sort.split(":");useEffect(()=>{let active=true;getComparisonStatus({page,limit:10,sortBy,order}).then(r=>{if(active)setResult({state:r.data?.length?"ready":"empty",rows:r.data??[],meta:r.meta,message:""});}).catch(e=>{if(active){const f=classifyApiError(e);setResult({state:f.kind==="unavailable"?"unavailable":"error",rows:[],meta:null,message:f.message});}});return()=>{active=false;};},[page,sortBy,order,retry]);const rows=result.rows.map(x=>({...x.company,myCompanySelections:x.myCompanySelections,comparisonSelections:x.comparisonSelections}));const columns=useMemo(()=>[{key:"rank",label:"순위",render:(_,i)=>(page-1)*10+i+1},{key:"name",label:"기업 명"},{key:"description",label:"기업 소개"},{key:"category",label:"카테고리"},{key:"myCompanySelections",label:"내 기업 선택 횟수",render:r=>`${r.myCompanySelections}회`},{key:"comparisonSelections",label:"비교 기업 선택 횟수",render:r=>`${r.comparisonSelections}회`}],[page]);return <section className="status-page"><div className="page-heading"><h1 className="page-title">비교 현황</h1></div><label className="status-sort"><span className="visually-hidden">비교 현황 정렬</span><select value={sort} onChange={e=>{setSort(e.target.value);setPage(1);}}>{SORT_OPTIONS.map(o=><option key={o.value} value={o.value}>{o.label}</option>)}</select></label>{result.state==="ready"?<><CompanyDataTable rows={rows} columns={columns} rowHref={r=>`/companies/${r.id}`}/><Pagination page={result.meta?.page??page} totalPages={result.meta?.totalPages??0} onChange={setPage}/></>:<FeedbackState state={result.state} message={result.message||undefined} onRetry={result.state==="error"||result.state==="unavailable"?()=>setRetry(x=>x+1):undefined}/>}</section>;}
+
+export function ComparisonStatusPage() {
+  const [page, setPage] = useState(FIRST_PAGE);
+  const [sort, setSort] = useState(COMPARISON_STATUS_SORT_OPTIONS[0].value);
+  const result = usePaginatedQuery(getComparisonStatus, {
+    page,
+    ...getSortParams(sort),
+  });
+
+  const rows = result.rows.map(({ company, myCompanySelections, comparisonSelections }) => ({
+    ...company,
+    myCompanySelections,
+    comparisonSelections,
+  }));
+  const columns = [
+    { key: "rank", label: "순위", render: (_, index) => getRowNumber(page, index) },
+    ...COMPANY_IDENTITY_COLUMNS,
+    {
+      key: "myCompanySelections",
+      label: "내 기업 선택 횟수",
+      render: (company) => `${company.myCompanySelections}회`,
+    },
+    {
+      key: "comparisonSelections",
+      label: "비교 기업 선택 횟수",
+      render: (company) => `${company.comparisonSelections}회`,
+    },
+  ];
+
+  function handleSortChange(value) {
+    setSort(value);
+    setPage(FIRST_PAGE);
+  }
+
+  return (
+    <section>
+      <PageHeading title="비교 현황" />
+      <SortSelect
+        label="비교 현황 정렬"
+        value={sort}
+        options={COMPARISON_STATUS_SORT_OPTIONS}
+        onChange={handleSortChange}
+      />
+      {result.state === QUERY_STATE.ready ? (
+        <>
+          <CompanyDataTable
+            rows={rows}
+            columns={columns}
+            rowHref={(company) => companyDetailPath(company.id)}
+          />
+          <Pagination
+            page={result.meta?.page ?? page}
+            totalPages={result.meta?.totalPages ?? 0}
+            onChange={setPage}
+          />
+        </>
+      ) : (
+        <FeedbackState
+          state={result.state}
+          message={result.message || undefined}
+          onRetry={canRetryQuery(result.state) ? result.retry : undefined}
+        />
+      )}
+    </section>
+  );
+}

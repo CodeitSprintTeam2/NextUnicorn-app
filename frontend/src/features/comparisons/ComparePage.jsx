@@ -1,22 +1,90 @@
-import { useEffect,useState } from "react";
-import { classifyApiError } from "../../api/errors.js";
-import { CompanyMark } from "../../components/CompanyMark.jsx";
-import { FeedbackState } from "../../components/FeedbackState.jsx";
+import { useState } from "react";
+import {
+  COMPANY_COMPARISON_SORT_OPTIONS,
+  COMPANY_RANKING_SORT_OPTIONS,
+} from "../../utils/companySortOptions.js";
+import { Button } from "../../components/Button.jsx";
 import { Modal } from "../../components/Modal.jsx";
-import { InvestmentDialogs } from "../investments/index.js";
-import { canSubmitComparison,getCompanyRanking,submitComparison,toggleCompanySelection } from "./comparisons.api.js";
-import { ComparisonResults } from "./ComparisonResults.jsx";
-import { CompanySelectionDialog } from "./CompanySelectionDialog.jsx";
-import { RankingResults } from "./RankingResults.jsx";
-import "./ComparePage.css";
-const COMPARE_SORT_OPTIONS=[{value:"actualInvestment:desc",label:"누적 투자 금액 높은 순"},{value:"actualInvestment:asc",label:"누적 투자 금액 낮은 순"},{value:"revenue:desc",label:"매출액 높은 순"},{value:"revenue:asc",label:"매출액 낮은 순"},{value:"employees:desc",label:"고용 인원 많은 순"},{value:"employees:asc",label:"고용 인원 적은 순"}];
-const RANKING_SORT_OPTIONS=[{value:"revenue:desc",label:"매출액 높은 순"},{value:"revenue:asc",label:"매출액 낮은 순"},{value:"employees:desc",label:"고용 인원 많은 순"},{value:"employees:asc",label:"고용 인원 적은 순"}];
-export function ComparePage(){const [my,setMy]=useState(null);const [others,setOthers]=useState([]);const [recent,setRecent]=useState([]);const [dialog,setDialog]=useState(null);const [step,setStep]=useState("select");const [comparison,setComparison]=useState(null);const [sort,setSort]=useState(COMPARE_SORT_OPTIONS[0].value);const [rankSort,setRankSort]=useState(RANKING_SORT_OPTIONS[0].value);const [ranking,setRanking]=useState({state:"idle",rows:[],rank:null,message:""});const [error,setError]=useState("");const [pending,setPending]=useState(false);const [investing,setInvesting]=useState(false);const [clear,setClear]=useState(false);const [sortBy,order]=sort.split(":");const [rankBy,rankOrder]=rankSort.split(":");const resultMy=comparison?.myCompany??my;
- useEffect(()=>{if(step!=="results"||!resultMy?.id)return;let active=true;setRanking({state:"loading",rows:[],rank:null,message:""});getCompanyRanking(resultMy.id,{sortBy:rankBy,order:rankOrder}).then(r=>{if(active){const d=r.data??r;setRanking({state:d.companies?.length?"ready":"empty",rows:d.companies??[],rank:d.rank??null,message:""});}}).catch(e=>{if(active){const f=classifyApiError(e);setRanking({state:f.kind==="unavailable"?"unavailable":"error",rows:[],rank:null,message:f.message});}});return()=>{active=false;};},[step,resultMy?.id,rankBy,rankOrder]);
- function chooseMine(c){setMy(c);setOthers(v=>v.filter(x=>String(x.id)!==String(c.id)));setRecent(v=>[c,...v.filter(x=>String(x.id)!==String(c.id))].slice(0,5));setComparison(null);setStep("select");setDialog(null);setError("");}
- function toggleOther(c){setOthers(v=>toggleCompanySelection(v,c));setComparison(null);setError("");}
- async function compare(){if(!canSubmitComparison(my?.id,others)||pending)return;setPending(true);setError("");try{const r=await submitComparison({myCompanyId:Number(my.id),compareCompanyIds:others.map(c=>Number(c.id))});setComparison(r.data??r);setStep("results");}catch(e){setError(classifyApiError(e).message);}finally{setPending(false);}}
- function reset(){setMy(null);setOthers([]);setComparison(null);setStep("select");setClear(false);setError("");}
- return <section className="compare-page">{step==="select"?<><div className="page-heading"><h1 className="page-title">나의 기업을 선택해 주세요!</h1>{(my||others.length>0)&&<button className="button button--quiet" onClick={()=>setClear(true)}>전체 초기화</button>}</div><button className="my-company-card" onClick={()=>setDialog("my-company")}>{my?<><CompanyMark company={my} size="lg"/><strong>{my.name}</strong><small>{my.category}</small></>:<><span className="add-mark">+</span><strong>기업 추가</strong></>}</button>{my&&<section className="compare-selection"><div className="section-heading"><h2>어떤 기업이 궁금하세요?</h2><button className="button" onClick={()=>setDialog("compare-companies")}>기업 추가하기</button></div>{others.length?<div className="compare-grid">{others.map(c=><article className="compare-card" key={c.id}><button aria-label={`${c.name} 선택 취소`} onClick={()=>toggleOther(c)}>×</button><CompanyMark company={c}/><strong>{c.name}</strong><small>{c.category}</small></article>)}{others.length<5&&<button className="compare-card add-card" onClick={()=>setDialog("compare-companies")}>＋<strong>기업 추가</strong></button>}</div>:<button className="compare-empty" onClick={()=>setDialog("compare-companies")}>비교할 기업을 추가해 주세요.<br/>최소 1개, 최대 5개까지 선택할 수 있습니다.</button>}</section>}{error&&<p role="alert" className="compare-error">{error}</p>}<div className="compare-submit"><button className="button" disabled={!canSubmitComparison(my?.id,others)||pending} onClick={compare}>{pending?"비교 중...":"기업 비교하기"}</button></div></>:<><div className="page-heading"><h1 className="page-title">내가 선택한 기업</h1><button className="button" onClick={()=>{setStep("select");setDialog("compare-companies");}}>다른 기업 비교하기</button></div>{resultMy&&<div className="compare-result-own"><CompanyMark company={resultMy} size="lg"/><strong>{resultMy.name}</strong><small>{resultMy.category}</small></div>}<section className="compare-result-section"><div className="section-heading"><h2>비교 결과 확인하기</h2><select value={sort} onChange={e=>setSort(e.target.value)} aria-label="비교 결과 정렬">{COMPARE_SORT_OPTIONS.map(o=><option key={o.value} value={o.value}>{o.label}</option>)}</select></div><ComparisonResults myCompany={resultMy} compareCompanies={comparison?.compareCompanies??[]} sortBy={sortBy} order={order}/></section><section className="compare-result-section"><div className="section-heading"><h2>기업 순위 확인하기{ranking.rank&&<span className="rank-label">현재 {ranking.rank}위</span>}</h2><select value={rankSort} onChange={e=>setRankSort(e.target.value)} aria-label="기업 순위 정렬">{RANKING_SORT_OPTIONS.map(o=><option key={o.value} value={o.value}>{o.label}</option>)}</select></div>{ranking.state==="ready"?<RankingResults companies={ranking.rows}/>:<FeedbackState state={ranking.state==="idle"?"loading":ranking.state} message={ranking.message||undefined}/>}</section><div className="compare-submit"><button className="button" onClick={()=>setInvesting(true)}>나의 기업에 투자하기</button></div><InvestmentDialogs company={resultMy} mode={investing?"create":null} onClose={()=>setInvesting(false)} onChanged={()=>setInvesting(false)}/></>}
- <CompanySelectionDialog mode={dialog} myCompany={my} recentMyCompanies={recent} selectedCompanies={others} onSelectMyCompany={chooseMine} onToggleCompareCompany={toggleOther} onClose={()=>setDialog(null)}/><Modal open={clear} title="선택 초기화" onClose={()=>setClear(false)}><p>선택한 내 기업과 비교 기업을 모두 초기화할까요?</p><div className="compare-actions"><button className="button button--outline" onClick={()=>setClear(false)}>취소</button><button className="button" onClick={reset}>초기화</button></div></Modal></section>;
+import { INVESTMENT_MODE, InvestmentDialogs } from "../investments/index.js";
+import { COMPARISON_STEP, SELECTION_MODE } from "./comparison.constants.js";
+import { CompanySelectionDialog } from "./components/CompanySelectionDialog.jsx";
+import { ComparisonResultView } from "./components/ComparisonResultView.jsx";
+import { ComparisonSelection } from "./components/ComparisonSelection.jsx";
+import { useComparison } from "./useComparison.js";
+import styles from "./ComparePage.module.css";
+
+export function ComparePage() {
+  const comparison = useComparison();
+  const [resultSort, setResultSort] = useState(COMPANY_COMPARISON_SORT_OPTIONS[0].value);
+  const [rankingSort, setRankingSort] = useState(COMPANY_RANKING_SORT_OPTIONS[0].value);
+  const [selectionMode, setSelectionMode] = useState(null);
+  const [investing, setInvesting] = useState(false);
+  const [confirmReset, setConfirmReset] = useState(false);
+
+  function handleChooseMyCompany(company) {
+    comparison.chooseMyCompany(company);
+    setSelectionMode(null);
+  }
+
+  function handleChooseOtherCompanies() {
+    comparison.showSelection();
+    setSelectionMode(SELECTION_MODE.compareCompanies);
+  }
+
+  function handleReset() {
+    comparison.reset();
+    setConfirmReset(false);
+  }
+
+  return (
+    <section aria-busy={comparison.pending}>
+      {comparison.step === COMPARISON_STEP.select ? (
+        <ComparisonSelection
+          myCompany={comparison.myCompany}
+          compareCompanies={comparison.compareCompanies}
+          pending={comparison.pending}
+          error={comparison.error}
+          canCompare={comparison.canCompare}
+          onChooseMyCompany={() => setSelectionMode(SELECTION_MODE.myCompany)}
+          onChooseCompareCompanies={() => setSelectionMode(SELECTION_MODE.compareCompanies)}
+          onRemoveCompany={comparison.toggleCompareCompany}
+          onReset={() => setConfirmReset(true)}
+          onCompare={comparison.compare}
+        />
+      ) : (
+        <ComparisonResultView
+          comparison={comparison.comparison}
+          sort={resultSort}
+          onSortChange={setResultSort}
+          rankingSort={rankingSort}
+          onRankingSortChange={setRankingSort}
+          onChooseCompanies={handleChooseOtherCompanies}
+          onInvest={() => setInvesting(true)}
+        />
+      )}
+      <CompanySelectionDialog
+        mode={selectionMode}
+        myCompany={comparison.myCompany}
+        recentMyCompanies={comparison.recentCompanies}
+        selectedCompanies={comparison.compareCompanies}
+        onSelectMyCompany={handleChooseMyCompany}
+        onToggleCompareCompany={comparison.toggleCompareCompany}
+        onClearCompareCompanies={comparison.clearCompareCompanies}
+        onClose={() => setSelectionMode(null)}
+      />
+      <InvestmentDialogs
+        company={comparison.comparison?.myCompany ?? comparison.myCompany}
+        mode={investing ? INVESTMENT_MODE.create : null}
+        onClose={() => setInvesting(false)}
+        onChanged={() => setInvesting(false)}
+      />
+      <Modal open={confirmReset} title="선택 초기화" onClose={() => setConfirmReset(false)}>
+        <p>선택한 내 기업과 비교 기업을 모두 초기화할까요?</p>
+        <div className={styles.actions}>
+          <Button variant="outline" onClick={() => setConfirmReset(false)}>취소</Button>
+          <Button onClick={handleReset}>초기화</Button>
+        </div>
+      </Modal>
+    </section>
+  );
 }

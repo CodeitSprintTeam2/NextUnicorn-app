@@ -1,4 +1,21 @@
 import { apiClient } from "../../api/client.js";
-export async function listCompanies(params={}) { return (await apiClient.get("/companies",{params})).data; }
-export async function getCompany(companyId) { return (await apiClient.get(`/companies/${companyId}`)).data; }
-export async function listCompanyInvestments(companyId,params={}) { return (await apiClient.get(`/companies/${companyId}/investments`,{params})).data; }
+
+const COMPANIES_ENDPOINT = "/companies";
+
+export async function listCompanies(params = {}) {
+  const response = await apiClient.get(COMPANIES_ENDPOINT, { params });
+  return response.data;
+}
+
+export async function getCompany(companyId) {
+  const response = await apiClient.get(`${COMPANIES_ENDPOINT}/${companyId}`);
+  return response.data;
+}
+
+export async function listCompanyInvestments(companyId, params = {}) {
+  const response = await apiClient.get(
+    `${COMPANIES_ENDPOINT}/${companyId}/investments`,
+    { params },
+  );
+  return response.data;
+}
