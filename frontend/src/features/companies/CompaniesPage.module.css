@@ -1,0 +1,21 @@
+.compareLink {
+  min-height: 34px;
+  padding: 0 13px;
+  font-size: 11px;
+}
+
+.description {
+  display: -webkit-box;
+  max-width: 290px;
+  overflow: hidden;
+  color: #bbb;
+  line-height: 1.45;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+@media (max-width: 520px) {
+  .compareLink {
+    align-self: center;
+  }
+}

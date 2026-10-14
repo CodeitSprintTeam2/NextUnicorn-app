@@ -1,0 +1,1 @@
+export const COMPANY_SEARCH_DELAY_MS = 250;

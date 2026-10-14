@@ -1,0 +1,60 @@
+.form {
+  display: grid;
+  gap: 12px;
+}
+
+.field {
+  display: grid;
+  gap: 5px;
+  color: #ddd;
+  font-size: 12px;
+}
+
+.field input,
+.field textarea {
+  width: 100%;
+  min-height: 38px;
+  padding: 9px 10px;
+  border: 1px solid #4b4b4b;
+  border-radius: 6px;
+  background: #191919;
+  outline: 0;
+}
+
+.field textarea {
+  resize: vertical;
+}
+
+.field small,
+.error {
+  margin: 0;
+  color: var(--danger);
+  font-size: 11px;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.company {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.company small {
+  color: #999;
+}
+
+.deleteSummary {
+  margin: 0 0 14px;
+  color: #eee;
+}
+
+.dialog {
+  width: min(100%, 480px);
+}

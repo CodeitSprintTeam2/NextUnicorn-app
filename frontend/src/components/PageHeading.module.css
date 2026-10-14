@@ -1,0 +1,25 @@
+.heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.title {
+  margin: 0;
+  color: #f4f4f4;
+  font-size: 22px;
+  letter-spacing: -.035em;
+}
+
+@media (max-width: 700px) {
+  .heading {
+    align-items: flex-start;
+    margin-bottom: 18px;
+  }
+
+  .title {
+    font-size: 19px;
+  }
+}
