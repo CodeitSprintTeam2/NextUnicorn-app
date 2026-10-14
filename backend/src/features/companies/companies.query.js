@@ -58,6 +58,6 @@ export function parseCompaniesQuery(query) {
     limit,
     search,
     sortBy,
-    order: sortBy === undefined ? undefined : order || "asc",
+    order: sortBy === undefined ? undefined : order || "desc",
   };
 }
