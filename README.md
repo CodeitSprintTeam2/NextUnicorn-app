@@ -1,355 +1,241 @@
 # View My Startup
 
-## 기술
+스타트업 정보 조회, 기업 비교 및 순위 분석, 모의 가상 투자 기능을 제공하는 웹 서비스입니다.
+
+---
+
+## 1. 프로젝트 개요 & 서비스 아키텍처
+
+### 주요 기능 및 화면
+- **전체 기업 목록 (`/companies`)**: 기업 정보 검색, 정렬(누적 투자금, 매출액, 고용 인원), 페이지네이션
+- **기업 상세 (`/companies/:companyId`)**: 기업 상세 정보 및 가상 투자 내역 조회, 가상 투자 등록/수정/삭제 모달
+- **기업 비교 및 내 기업 순위 (`/compare`)**: 기준 기업(내 기업)과 비교 기업 선택, 실시간 지표 비교, 매출액/고용 인원 기준 순위 및 인접 기업 조회
+- **비교 현황 (`/compare/status`)**: 기업별 내 기업 선택 횟수 및 비교 기업 선택 횟수 집계 현황
+- **투자 현황 (`/investments`)**: 기업별 가상 투자 합계와 실제 누적 투자 금액 비교 및 순위 조회
+
+### 서비스 아키텍처
+
+Netlify(프론트엔드), Render Web Service(백엔드 API), Render PostgreSQL(데이터베이스)로 구성된 배포 환경 아키텍처입니다.
+
+```mermaid
+flowchart LR
+    subgraph Frontend ["Frontend (Netlify)"]
+        SPA["React SPA (Vite)"]
+    end
+
+    subgraph Backend ["Backend (Render)"]
+        API["Express 5 REST API"]
+        Prisma["Prisma 7 ORM"]
+        API --> Prisma
+    end
+
+    subgraph Database ["Database (Render)"]
+        DB[("PostgreSQL 18")]
+    end
+
+    SPA -- "HTTPS REST API (JSON)" --> API
+    Prisma -- "@prisma/adapter-pg" --> DB
+```
+
+---
+
+## 2. 기술 스택
 
 | 구분 | 기술 | 용도 |
 | --- | --- | --- |
-| 패키지 관리 | npm | 프론트엔드·백엔드 의존성 및 스크립트 관리 |
-| 언어·모듈 | JavaScript, ES 모듈 | `import`/`export` 방식으로 코드 작성 |
-| 프론트엔드 | Vite, React, React Router, axios | 화면 구성, 클라이언트 라우팅, API 요청 |
-| 백엔드 | Node.js 24, Express 5 | HTTP API 서버 |
-| ORM | Prisma 7, `@prisma/adapter-pg`, `pg` | PostgreSQL 스키마, 마이그레이션, 쿼리와 드라이버 연결 |
-| 데이터베이스 | PostgreSQL 18 | 개발·배포 데이터 저장 |
-| 로컬 개발 환경 | Docker, Docker Compose | Node.js·PostgreSQL 버전과 실행 환경 통일 |
-| 비밀번호 | bcrypt | 가상 투자 비밀번호 해시 및 비교 |
-| CORS | cors | 허용된 프론트엔드 Origin의 API 요청 처리 |
-| 프론트엔드 배포 | Netlify | Vite 빌드 결과 배포 |
-| 서버·DB 배포 | Render, Render PostgreSQL | Express 서버와 배포 DB 운영 |
+| 패키지 관리 | npm (Workspaces) | 프론트엔드·백엔드 모노레포 의존성 및 스크립트 관리 |
+| 언어·런타임 | JavaScript, Node.js 24 | ES 모듈(`import`/`export`) 기반 풀스택 개발 |
+| 프론트엔드 | Vite, React 19, React Router, axios | 화면 UI 구성, 클라이언트 라우팅, 비동기 API 통신 |
+| 백엔드 | Express 5 | RESTful HTTP API 서버 구현 |
+| ORM | Prisma 7, `@prisma/adapter-pg`, `pg` | PostgreSQL 스키마 모델링, 마이그레이션 및 쿼리 매핑 |
+| 데이터베이스 | PostgreSQL 18 | 개발 및 운영 데이터 저장소 |
+| 가상화 | Docker, Docker Compose | 로컬 개발 환경 통일 (Node.js, PostgreSQL 컨테이너화) |
+| 보안·통신 | bcrypt, cors | 가상 투자 비밀번호 단방향 해싱, 교차 출처 리소스 공유 제어 |
+| 프론트엔드 배포 | Netlify | Vite 빌드 산출물 정적 호스팅 및 SPA 라우팅 |
+| 서버·DB 배포 | Render | Express Web Service 및 관리형 PostgreSQL 운영 |
 
-README 기술 표에 없는 패키지는 사용하기 전에 팀의 합의를 받는다.
+> [!NOTE]
+> README 기술 표에 없는 패키지는 사용하기 전에 팀의 사전 협의를 거칩니다.
 
-## 폴더 구조
+---
 
-프론트엔드와 백엔드는 기능별 코드를 한곳에서 찾을 수 있도록 기능 중심 구조를 사용한다. 아래 구조는 기능을 구현할 때 따를 권장 위치이며, 사용하지 않는 파일이나 폴더를 미리 만들지 않는다.
+## 3. 폴더 구조
 
-### 프론트엔드
-
-```text
-frontend/src/
-├── api/
-│   └── client.js
-├── components/
-├── hooks/
-├── utils/
-├── features/
-│   ├── companies/
-│   ├── comparisons/
-│   └── investments/
-├── pages/
-├── App.jsx
-└── main.jsx
-```
-
-- `api`에는 axios 인스턴스처럼 모든 기능에서 공유하는 API 설정을 둔다.
-- `components`, `hooks`, `utils`에는 둘 이상의 기능에서 실제로 함께 사용하는 코드만 둔다.
-- `features`에는 기업, 비교, 투자처럼 기능별 UI와 API 호출, 훅, 비즈니스 로직을 모은다.
-- `pages`에는 React Router의 주소와 직접 연결되는 페이지 컴포넌트를 둔다. 페이지는 필요한 기능을 조합하고 세부 로직은 해당 `features` 폴더에 둔다.
-- 기능 폴더는 처음에는 파일을 펼쳐 둔 flat 구조로 시작한다. 기능 내부의 컴포넌트가 많아질 때만 해당 기능 아래에 `components` 같은 하위 폴더를 만든다.
-- 프로젝트는 JavaScript를 사용하므로 일반 코드는 `.js`, JSX를 포함한 코드는 `.jsx`로 작성한다. TypeScript 타입 파일은 만들지 않는다.
-
-### 백엔드
+프로젝트는 기능 단위 응집도를 높이기 위해 프론트엔드와 백엔드 모두 **기능 중심(Feature-based) 폴더 구조**를 사용합니다.
 
 ```text
-backend/src/
-├── config/
-│   └── env.js
-├── lib/
-│   └── prisma.js
-├── middlewares/
-├── utils/
-├── features/
-│   ├── companies/
-│   │   ├── companies.routes.js
-│   │   ├── companies.controller.js
-│   │   ├── companies.service.js
-│   │   ├── companies.repository.js
-│   │   └── index.js
-│   ├── comparisons/
-│   └── investments/
-├── app.js
-└── server.js
+ViewMyStartup-app/
+├── backend/                       # 백엔드 패키지
+│   ├── prisma/
+│   │   ├── migrations/            # 데이터베이스 마이그레이션 이력
+│   │   └── schema.prisma          # Prisma 스키마 정의
+│   ├── src/
+│   │   ├── config/                # 환경 변수 및 실행 설정
+│   │   ├── lib/                   # 외부 도구 클라이언트 (Prisma Client 등)
+│   │   ├── middlewares/           # 공통 Express 미들웨어 (에러 핸들러 등)
+│   │   ├── utils/                 # 공통 유틸리티
+│   │   ├── features/              # 기능별 3계층 아키텍처 모듈
+│   │   │   ├── companies/         # 기업 관련 (routes, controller, service, repository)
+│   │   │   ├── comparisons/       # 비교 관련 (routes, controller, service, repository)
+│   │   │   └── investments/       # 투자 관련 (routes, controller, service, repository)
+│   │   ├── app.js                 # Express 앱 및 라우터 조합
+│   │   └── server.js              # 서버 진입점 및 포트 리스닝
+│   ├── Dockerfile
+│   └── package.json
+├── frontend/                      # 프론트엔드 패키지
+│   ├── public/
+│   │   └── _redirects             # Netlify SPA 클라이언트 라우팅 리디렉션
+│   ├── src/
+│   │   ├── api/                   # axios 인스턴스 및 공통 통신 설정
+│   │   ├── components/            # 전역 공유 공통 컴포넌트
+│   │   ├── hooks/                 # 전역 공유 커스텀 훅
+│   │   ├── utils/                 # 전역 공통 헬퍼 함수
+│   │   ├── features/              # 기능별 컴포넌트, 훅, 비즈니스 로직
+│   │   │   ├── companies/         # 기업 목록 및 상세 컴포넌트/로직
+│   │   │   ├── comparisons/       # 기업 비교 및 순위 컴포넌트/로직
+│   │   │   └── investments/       # 가상 투자 및 현황 컴포넌트/로직
+│   │   ├── pages/                 # React Router 페이지 컴포넌트
+│   │   ├── App.jsx                # 라우트 설정 및 루트 컴포넌트
+│   │   └── main.jsx               # 프론트엔드 진입점
+│   ├── Dockerfile
+│   └── package.json
+├── docs/                          # 프로젝트 문서 및 명세 (brief, PLAN, ADR, API, issues)
+├── compose.yaml                   # 로컬 개발용 Docker Compose 설정
+├── render.yaml                    # Render Blueprint 배포 설정
+├── netlify.toml                   # Netlify 빌드 및 배포 설정
+└── package.json                   # 루트 워크스페이스 설정
 ```
 
-- `config`에는 환경 변수처럼 실행 환경에 관한 설정을 둔다.
-- `lib`에는 Prisma Client처럼 여러 기능에서 공유하는 외부 도구의 초기화 코드를 둔다.
-- `middlewares`와 `utils`에는 둘 이상의 기능에서 실제로 공유하는 Express 미들웨어와 유틸리티만 둔다.
-- `features`에는 API를 기업, 비교, 투자 기능 단위로 나누어 관련 코드를 모은다.
-- `routes`는 주소와 HTTP 메서드를 연결하고, `controller`는 요청을 받아 응답을 만든다.
-- `service`는 입력 검증과 비즈니스 규칙을 처리하고, `repository`는 Prisma를 통한 DB 접근을 담당한다.
-- `app.js`는 공통 미들웨어와 기능별 라우터를 조립하고, `server.js`는 서버 실행과 정상 종료를 담당한다.
-- 각 기능은 필요한 역할의 파일만 만든다. 로직이 단순한데도 `controller`, `service`, `repository`를 형식적으로 모두 만들지 않는다.
+---
 
-### 공통 원칙
+## 4. 환경 변수 설명
 
-- 한 기능에서만 사용하는 코드는 전역 공통 폴더로 옮기지 않고 해당 기능 폴더에 둔다.
-- 둘 이상의 기능에서 같은 역할로 사용되는 것이 확인됐을 때만 공통 폴더로 이동한다.
-- 다른 기능의 내부 구현을 직접 참조하지 않는다. 기능 사이에 공유해야 하는 인터페이스가 생기면 각 기능의 `index.js`에서 필요한 항목만 공개한다.
-- 로그인·회원가입과 새로고침 후 선택 상태 복원은 이번 프로젝트 범위에 포함하지 않는다. 폴더 구조 예시에도 범위 밖 기능을 추가하지 않는다.
-- 폴더 구조 때문에 API의 요청·응답 필드, 실패 문구 또는 데이터베이스 계약을 변경하지 않는다.
+로컬 실행 전 각 패키지의 `.env.example` 파일을 복사하여 `.env` 파일을 생성해야 합니다. (`.env`는 보안상 저장소에 커밋하지 않습니다.)
 
-## 로컬 실행
+### Backend (`backend/.env`)
 
-Node.js 24와 로컬 PostgreSQL 18을 준비한 뒤 저장소 최상위에서 의존성을 설치한다.
+| 환경 변수 | 설명 | 개발 기본값 | 배포 환경 설정 |
+| --- | --- | --- | --- |
+| `DATABASE_URL` | PostgreSQL 18 연결 URL | `postgresql://USER:PASSWORD@HOST:5432/DATABASE_NAME` | Render 대시보드의 내부 DB 연결 문자열 |
+| `CLIENT_ORIGIN` | API 호출을 허용할 프론트엔드 Origin (끝 슬래시 제외) | `http://localhost:5173` | Netlify에 배포된 서비스 도메인 (예: `https://view-my-startup.netlify.app`) |
+| `PORT` | 백엔드 서버 포트 (선택 사항) | `3000` | Render 기본 포트 자동 주입 |
+
+### Frontend (`frontend/.env`)
+
+| 환경 변수 | 설명 | 개발 기본값 | 배포 환경 설정 |
+| --- | --- | --- | --- |
+| `VITE_API_BASE_URL` | 백엔드 API 기본 주소 (`/api` 포함, 끝 슬래시 제외) | `http://localhost:3000/api` | Render 배포 API 주소 (예: `https://view-my-startup.onrender.com/api`) |
+
+---
+
+## 5. 로컬 실행 가이드라인
+
+### 사전 요구사항
+- Node.js 24 이상
+- npm 10 이상
+- Docker 및 Docker Compose (Docker로 실행 시) 또는 로컬 PostgreSQL 18
+
+의존성 패키지를 저장소 루트에서 한 번에 설치합니다.
 
 ```bash
 npm install
 ```
 
-`backend/.env.example`과 `frontend/.env.example`을 복사해 각 폴더에 `.env`를 만들고 실제 로컬 값을 입력한다. `.env`는 저장소에 커밋하지 않는다.
+---
 
-Prisma Client를 생성하고 로컬 DB에 마이그레이션을 적용한다.
+### 방법 1. Docker Compose로 실행 (권장)
 
-```bash
-npm run prisma:generate --workspace backend
-npm run prisma:migrate --workspace backend -- --name init
-```
+호스트에 별도의 Node.js나 PostgreSQL을 개별 설정하지 않고 일관된 컨테이너 환경에서 실행할 수 있습니다.
 
-서로 다른 터미널에서 서버와 화면을 실행한다.
+1. **서비스 빌드 및 컨테이너 시작**
+   ```bash
+   docker compose up --build
+   ```
 
-```bash
-npm run dev:backend
-```
+2. **데이터베이스 마이그레이션 적용 (최초 실행 시 또는 스키마 변경 시)**  
+   새 터미널 창을 열고 아래 명령을 실행합니다.
+   ```bash
+   docker compose exec backend npm run prisma:migrate --workspace backend -- --name init
+   ```
 
-```bash
-npm run dev:frontend
-```
+3. **컨테이너 종료**
+   ```bash
+   docker compose down
+   ```
+   > [!WARNING]
+   > DB 데이터까지 완전히 초기화해야 할 때만 `docker compose down --volumes`를 사용합니다.
 
-- 프론트엔드: `http://localhost:5173`
-- 상태 확인 API: `http://localhost:3000/api/health`
+---
 
-### Docker로 실행
+### 방법 2. 로컬 환경에서 직접 실행
 
-Docker를 사용하면 호스트에 Node.js 24와 PostgreSQL 18을 각각 설치하지 않아도 같은 개발 환경을 사용할 수 있다. Docker는 로컬 개발에만 사용하며 Netlify·Render 배포 방식은 변경하지 않는다.
+1. **환경 변수 파일 생성**
+   ```bash
+   cp backend/.env.example backend/.env
+   cp frontend/.env.example frontend/.env
+   ```
+   `backend/.env` 파일의 `DATABASE_URL`에 본인 로컬 PostgreSQL 18 접속 정보를 입력합니다.
 
-저장소 최상위에서 이미지 빌드와 전체 서비스를 실행한다.
+2. **Prisma Client 생성 및 마이그레이션 적용**
+   ```bash
+   npm run prisma:generate --workspace backend
+   npm run prisma:migrate --workspace backend -- --name init
+   ```
 
-```bash
-docker compose up --build
-```
+3. **개발 서버 실행**
+   서로 다른 터미널에서 각각 실행합니다.
+   ```bash
+   # 터미널 1: 백엔드 API 서버 (포트 3000)
+   npm run dev:backend
+   ```
+   ```bash
+   # 터미널 2: 프론트엔드 개발 서버 (포트 5173)
+   npm run dev:frontend
+   ```
 
-처음 실행했거나 스키마가 변경되었다면 다른 터미널에서 개발 DB 마이그레이션을 적용한다.
+---
 
-```bash
-docker compose exec backend npm run prisma:migrate --workspace backend -- --name init
-```
+### 로컬 접속 주소 및 주요 스크립트
 
-- 프론트엔드: `http://localhost:5173`
-- 상태 확인 API: `http://localhost:3000/api/health`
-- PostgreSQL: `localhost:5432`
-- Docker 내부에서 백엔드는 `db:5432`로 PostgreSQL에 연결한다.
-- 소스 코드는 컨테이너에 마운트되므로 변경사항이 개발 서버에 반영된다.
-- DB 데이터는 `postgres_data` 볼륨에 저장되어 컨테이너를 다시 시작해도 유지된다.
+- **프론트엔드 웹 화면**: `http://localhost:5173`
+- **백엔드 헬스체크 API**: `http://localhost:3000/api/health`
+- **PostgreSQL 로컬 포트**: `localhost:5432`
 
-서비스를 종료한다.
-
-```bash
-docker compose down
-```
-
-DB 데이터까지 초기화해야 할 때만 다음 명령을 사용한다. 이 명령은 로컬 Docker DB 데이터를 삭제한다.
-
-```bash
-docker compose down --volumes
-```
-
-## 배포
-
-### Render
-
-- 저장소 루트의 `render.yaml` Blueprint로 PostgreSQL과 Web Service를 만든다.
-- `CLIENT_ORIGIN`에는 실제 Netlify 주소를 입력한다.
-- 운영 DB에는 저장소에 포함된 마이그레이션만 `npm run prisma:deploy --workspace backend`로 적용한다.
-- 배포 후 `/api/health`가 `200 OK`인지 확인한다.
-
-### Netlify
-
-- GitHub 저장소를 연결하면 루트의 `netlify.toml` 설정으로 프론트엔드를 빌드한다.
-- `VITE_API_BASE_URL`에는 실제 Render 주소 뒤에 `/api`를 붙여 입력한다.
-- `frontend/public/_redirects`가 React Router 주소의 직접 접근과 새로고침을 처리한다.
-
-## 실행 환경과 CORS
-
-| 환경 | 프론트엔드 API 주소 | 서버가 허용할 Origin |
-| --- | --- | --- |
-| 개발 | `frontend/.env`의 `VITE_API_BASE_URL=http://localhost:3000/api` | `backend/.env`의 `CLIENT_ORIGIN=http://localhost:5173` |
-| 배포 | Netlify 환경 변수의 `VITE_API_BASE_URL=https://RENDER_HOST/api` | Render 환경 변수의 `CLIENT_ORIGIN=https://NETLIFY_HOST` |
-
-- Express는 `cors` 미들웨어에서 현재 환경의 `CLIENT_ORIGIN` 한 주소만 허용한다.
-- `Access-Control-Allow-Origin: *`는 사용하지 않는다.
-- 쿠키나 세션 인증을 사용하지 않으므로 credential 요청을 허용하지 않는다.
-- 허용 메서드는 `GET`, `POST`, `PATCH`, `DELETE`, `OPTIONS`다.
-- 허용 요청 헤더는 `Content-Type`이다.
-- preflight `OPTIONS` 요청은 `cors` 미들웨어가 처리한다.
-- 실제 Netlify·Render 주소와 비밀정보는 저장소에 기록하지 않는다.
-
-## API 실패 목록
-
-| HTTP 상태 | 코드 | 고정 문구 |
-| --- | --- | --- |
-| `400` | `INVALID_QUERY` | 쿼리 값이 올바르지 않습니다. |
-| `400` | `INVALID_PATH_PARAMETER` | 경로 매개변수가 올바르지 않습니다. |
-| `400` | `VALIDATION_ERROR` | 요청 값이 올바르지 않습니다. |
-| `401` | `INVALID_PASSWORD` | 비밀번호가 일치하지 않습니다. |
-| `404` | `COMPANY_NOT_FOUND` | 기업을 찾을 수 없습니다. |
-| `404` | `INVESTMENT_NOT_FOUND` | 투자 내역을 찾을 수 없습니다. |
-| `409` | `CONFLICT` | 현재 데이터 상태와 요청이 충돌합니다. |
-| `500` | `INTERNAL_SERVER_ERROR` | 서버 오류가 발생했습니다. |
-
-서버는 같은 실패 코드에 항상 위 문구를 사용한다. 필드별 검증 이유가 필요하면 API 계약에 따라 `details`를 추가한다.
-
-## 기능 목록
-
-| 구분 | 누가 | 무엇을 할 수 있다 |
-| --- | --- | --- |
-| 기업 목록 | 사용자 | 미리 등록된 전체 스타트업의 기업명, 기업 소개, 카테고리, 실제 누적 투자 금액, 매출액, 고용 인원을 조회할 수 있다. |
-| 기업 목록 | 사용자 | 기업 목록을 페이지별로 조회하고 기업명으로 검색할 수 있다. |
-| 기업 목록 | 사용자 | 기업 목록을 실제 누적 투자 금액, 매출액, 고용 인원 기준으로 오름차순 또는 내림차순 정렬할 수 있다. |
-| 기업 상세 | 사용자 | 기업을 선택해 기업명, 카테고리, 실제 누적 투자 금액, 가상 투자 합계, 매출액, 고용 인원과 기업 소개를 조회할 수 있다. |
-| 기업 상세 | 사용자 | 해당 기업의 가상 투자 내역을 페이지별로 조회하고, 투자자 이름, 투자 금액, 투자 코멘트를 확인할 수 있다. |
-| 기업 비교 | 사용자 | 비교의 기준이 될 내 기업을 하나 선택할 수 있다. |
-| 기업 비교 | 사용자 | 내 기업을 찾을 때 기업 목록을 페이지별로 조회하고 기업명으로 검색할 수 있다. |
-| 기업 비교 | 사용자 | 최근 선택한 내 기업을 최대 5개까지 조회할 수 있다. |
-| 기업 비교 | 사용자 | 비교 대상 기업을 1개 이상 5개 이하로 선택하고, 선택 완료로 확정할 수 있다. |
-| 기업 비교 | 사용자 | 비교 대상 기업을 찾을 때 기업 목록을 페이지별로 조회하고 기업명으로 검색할 수 있다. |
-| 기업 비교 | 사용자 | 선택한 비교 대상 기업 목록을 조회하고, 개별 선택을 취소하거나 전체 선택을 초기화할 수 있다. |
-| 기업 비교 | 사용자 | 내 기업과 비교 대상 기업의 기업명, 기업 소개, 카테고리, 실제 누적 투자 금액, 매출액, 고용 인원을 비교할 수 있다. |
-| 기업 비교 | 사용자 | 비교 결과를 실제 누적 투자 금액, 매출액, 고용 인원 기준으로 오름차순 또는 내림차순 정렬할 수 있다. |
-| 기업 순위 | 사용자 | 내 기업의 매출액 또는 고용 인원 기준 순위와 기업 정보를 조회할 수 있다. |
-| 기업 순위 | 사용자 | 내 기업을 포함해 순위가 가까운 기업 5개의 기업 정보를 조회할 수 있다. |
-| 비교 현황 | 사용자 | 각 기업의 기업명, 기업 소개, 카테고리, 내 기업 선택 횟수, 비교 기업 선택 횟수를 조회할 수 있다. |
-| 비교 현황 | 사용자 | 비교 현황을 페이지별로 조회하고, 내 기업 선택 횟수 또는 비교 기업 선택 횟수 기준으로 오름차순 또는 내림차순 정렬할 수 있다. |
-| 가상 투자 | 사용자 | 비교 결과에서 내 기업에 가상 투자할 수 있다. |
-| 가상 투자 | 사용자 | 기업 상세에서 해당 기업에 가상 투자할 수 있다. |
-| 가상 투자 | 사용자 | 투자 기업 정보, 투자자 이름, 투자 금액, 투자 코멘트, 비밀번호와 비밀번호 확인을 입력해 가상 투자를 등록할 수 있다. |
-| 가상 투자 | 사용자 | 기존 비밀번호와 일치하는 비밀번호를 입력해 가상 투자 정보를 수정할 수 있다. |
-| 가상 투자 | 사용자 | 기존 비밀번호와 일치하는 비밀번호를 입력해 가상 투자 정보를 삭제할 수 있다. |
-| 투자 현황 | 사용자 | 전체 기업의 순위, 기업명, 기업 소개, 카테고리, 가상 투자 합계와 실제 누적 투자 금액을 조회할 수 있다. |
-| 투자 현황 | 사용자 | 투자 현황을 페이지별로 조회하고, 가상 투자 합계 또는 실제 누적 투자 금액 기준으로 오름차순/내림차순 정렬할 수 있다. |
-
-## 화면과 주소
-
-| 화면 | 주소 | 주요 내용 |
-| --- | --- | --- |
-| 전체 기업 목록 | `/companies` | 기업 목록 조회, 검색, 정렬, 페이지 이동 |
-| 기업 상세 | `/companies/:companyId` | 기업 정보와 페이지별 가상 투자 내역 조회, 투자 등록·수정·삭제 모달 열기 |
-| 기업 비교 및 내 기업 순위 | `/compare` | 내 기업과 비교 대상 기업 선택, 비교 결과 확인, 내 기업의 매출액 또는 고용 인원 기준 순위와 근접한 기업 조회, 내 기업 투자 모달 열기 |
-| 비교 현황 | `/compare/status` | 기업별 내 기업 선택 횟수와 비교 기업 선택 횟수 조회, 정렬, 페이지 이동 |
-| 투자 현황 | `/investments` | 기업별 가상 투자 합계와 실제 누적 투자 금액 조회, 정렬, 페이지 이동 |
-
-### 주소가 없는 모달
-
-| 모달 | 열리는 화면 | 주요 내용 |
-| --- | --- | --- |
-| 가상 투자 등록 | 기업 상세, 기업 비교 | 투자자 이름, 투자 금액, 투자 코멘트, 비밀번호와 비밀번호 확인 입력 |
-| 가상 투자 수정 | 기업 상세 | 비밀번호 확인 후 투자 정보 수정 |
-| 가상 투자 삭제 | 기업 상세 | 비밀번호 확인 후 투자 정보 삭제 |
-
-## 범위와 우선순위
-
-### 기준
-
-| 구분 | 의미 |
+| 명령 | 설명 |
 | --- | --- |
-| Must | 프로젝트의 핵심 목적을 달성하기 위해 반드시 필요한 기능 |
-| Should | 중요하지만 없어도 핵심 흐름을 배포할 수 있는 기능 |
-| Could | 일정에 여유가 있을 때 사용자 경험을 개선하는 기능 |
-| Won't | 2026-10-21 기능 완성 범위에서 구현하지 않는 기능 |
-| P0 | 2026-10-15 시연에서 처음부터 끝까지 동작해야 하는 기능 |
-| P1 | 2026-10-21 기능 완성에 반드시 포함할 기능 |
-| P2 | 명세에 없으며 시간이 허락하면 구현할 수 있는 기능 |
+| `npm run dev:backend` | 백엔드 개발 서버 실행 (`--watch` 모드) |
+| `npm run dev:frontend` | 프론트엔드 Vite 개발 서버 실행 |
+| `npm run build:frontend` | 프론트엔드 프로덕션 빌드 |
+| `npm run prisma:generate --workspace backend` | Prisma Client 코드 재생성 |
+| `npm run prisma:migrate --workspace backend` | 로컬 개발 DB 마이그레이션 적용 및 스키마 반영 |
+| `npm run prisma:deploy --workspace backend` | 프로덕션 환경에 마이그레이션 적용 |
 
-### Must — 꼭 필요
+---
 
-| 우선순위 | 기능 | 이유 |
-| --- | --- | --- |
-| P0 | 전체 기업의 기본 정보 목록 조회 | 사용자가 투자할 기업을 찾는 핵심 흐름의 시작점이다. |
-| P0 | 기업 상세 정보와 해당 기업의 가상 투자 내역 조회 | 투자 대상을 확인하고 등록 결과를 검증하는 데 필요하다. |
-| P0 | 기업 상세에서 가상 투자 등록 | 첫 배포의 핵심 행동이다. |
-| P0 | 투자 비밀번호를 bcrypt로 해시해 저장 | 첫 배포부터 평문 비밀번호를 저장하지 않기 위해 필요하다. |
-| P0 | 목록 → 상세 → 투자 등록 → 상세에서 투자 확인 흐름 배포 | 2026-10-15 시연에서 확인할 처음부터 끝까지 이어지는 흐름이다. |
-| P1 | 기업 목록 페이지네이션과 기업명 검색 | 초기 데이터가 늘어나도 원하는 기업을 찾을 수 있어야 한다. |
-| P1 | 기업 목록의 실제 누적 투자 금액·매출액·고용 인원 정렬 | 요구된 기준으로 기업을 탐색하는 데 필요하다. |
-| P1 | 기업 상세의 가상 투자 목록 페이지네이션 | 투자 내역이 늘어나도 상세 화면을 나누어 조회할 수 있어야 한다. |
-| P1 | 내 기업 1개와 비교 기업 1~5개 선택, 선택 취소 및 전체 초기화 | 기업 비교 기능을 시작하기 위한 필수 입력이다. |
-| P1 | 내 기업과 비교 기업 선택 시 기업명 검색 및 페이지 이동 | 초기 데이터가 많아도 비교할 기업을 선택할 수 있어야 한다. |
-| P1 | 비교 기업 선택 완료 시 선택 개수 검증 | 비교 대상이 1~5개라는 규칙을 보장해야 한다. |
-| P1 | 내 기업과 비교 기업의 정보 및 비교 결과 조회 | 서비스의 핵심 주제인 기업 비교를 완성한다. |
-| P1 | 내 기업의 매출액·고용 인원 순위와 근접한 기업 조회 | 선택한 기업의 상대적 위치를 보여주는 핵심 비교 결과다. |
-| P1 | 비교 결과에서 내 기업에 가상 투자 등록 | 비교에서 투자까지 이어지는 최종 사용자 흐름을 완성한다. |
-| P1 | 비밀번호 확인을 통한 가상 투자 수정·삭제 | 로그인 없이 투자 정보를 안전하게 변경하기 위해 필요하다. |
-| P1 | 전체 기업의 가상 투자 합계와 실제 누적 투자 금액 조회 | 투자 결과를 기업 단위로 확인하는 데 필요하다. |
+## 6. 배포
 
-### Should — 있으면 좋음
+### Render (백엔드 및 데이터베이스)
+- 저장소 루트의 `render.yaml` Blueprint를 통해 PostgreSQL 데이터베이스와 Web Service를 한 번에 생성합니다.
+- `CLIENT_ORIGIN` 환경 변수에 Netlify 배포 도메인을 설정합니다.
+- 운영 DB에는 저장소에 포함된 마이그레이션 파일만 배포 시점에 적용합니다.
+- 배포 완료 후 `GET /api/health` 요청으로 `200 OK` 응답 상태를 확인합니다.
 
-| 우선순위 | 기능 | 이유 |
-| --- | --- | --- |
-| P1 | 비교 결과의 실제 누적 투자 금액·매출액·고용 인원 정렬 | `brief.md`가 요구하는 비교 결과 정렬 기능이다. |
-| P1 | 선택 완료 시 내 기업·비교 기업 선택 횟수 누적 및 현황 조회 | `brief.md`가 요구하는 선택 횟수 현황 기능이다. |
-| P1 | 투자 현황 페이지네이션 및 가상 투자 합계·실제 누적 투자 금액 정렬 | `brief.md`가 요구하는 투자 현황 탐색 기능이다. |
-| P1 | 최근 선택한 내 기업 최대 5개 조회 | `brief.md`가 요구하는 내 기업 선택 기능이다. |
-| P1 | 비교 대상 선택 목록 표시 | `brief.md`가 요구하는 비교 기업 선택 기능이다. |
-| P1 | 비교 현황 페이지네이션 및 선택 횟수 정렬 | `brief.md`가 요구하는 비교 현황 탐색 기능이다. |
+### Netlify (프론트엔드)
+- GitHub 저장소 연결 시 루트의 `netlify.toml` 설정에 따라 자동으로 빌드됩니다.
+- `VITE_API_BASE_URL` 환경 변수에 Render API 주소(뒤에 `/api` 포함)를 설정합니다.
+- `frontend/public/_redirects` 설정이 브라우저 새로고침 및 React Router의 클라이언트 사이드 라우팅을 지원합니다.
 
-### Won't — 이번엔 안 함
+---
 
-| 우선순위 | 기능 | 이유 |
-| --- | --- | --- |
-| — | 회원가입과 로그인 | 요구사항에서 제외되었고 2026-10-21 기능 완성 범위에서 인증 체계를 추가하지 않는다. |
-| — | 기업 등록·수정·삭제 | 기업 데이터는 서버에 미리 넣고 조회만 하기로 결정했다. |
-| — | 파일 업로드 | 요구사항에서 사용하지 않기로 정했다. |
-| — | TypeScript 전환 | React와 Express 모두 JavaScript로 구현하기로 정했다. |
-| — | 명시된 기술 외 라이브러리 도입 | 정해진 기술 범위를 유지하고 추가 학습과 통합 위험을 줄인다. |
-| — | 선택한 내 기업의 새로고침 후 복원 | 선택 상태를 현재 화면에서만 유지하기로 결정했다. |
+## 7. 명세 및 관련 문서 바로가기
 
-## 결정 기록
-
-| 날짜 | 정한 것 | 이유 | 다시 볼 때 |
-| --- | --- | --- | --- |
-| 2026-10-08 | 기업 데이터는 서버에 미리 넣고 사용자는 조회만 한다. | 2026-10-21 기능 완성 일정에서 기업 데이터 관리보다 조회·비교·가상 투자 흐름에 집중하기 위해서다. | 기업 등록·수정·삭제 기능이 필요해질 때 |
-| 2026-10-08 | 선택한 내 기업은 새로고침 후 유지하지 않는다. | 로그인 없는 선택을 현재 화면에서만 사용하는 임시 상태로 다루기 위해서다. | 새로고침 후에도 비교 흐름을 이어가야 할 필요가 생길 때 |
-| 2026-10-08 | 기업 선택 횟수는 선택 완료 시점에 누적한다. | 탐색 중 클릭이 아니라 사용자가 확정한 선택만 현황에 반영하기 위해서다. | 선택 완료 동작이나 선택 횟수의 집계 목적이 바뀔 때 |
-| 2026-10-08 | 화면 주소는 영문 경로를 사용한다. | 입력과 공유가 편리한 일반적인 URL 형태를 사용하기 위해서다. | URL 명명 규칙을 변경하거나 다국어 주소가 필요해질 때 |
-| 2026-10-08 | 기업 선택, 비교 결과, 내 기업 순위는 `/compare` 한 화면에서 단계만 전환한다. | 유지하지 않는 선택 상태를 한 화면 안에서 단순하게 다루기 위해서다. | 비교 결과나 순위를 직접 공유하거나 새로고침 후 복원해야 할 때 |
-| 2026-10-08 | 가상 투자 등록·수정·삭제는 모달로 제공한다. | 기존 화면의 맥락을 유지한 채 투자 작업을 처리하기 위해서다. | 투자 입력 절차가 길어지거나 개별 주소가 필요해질 때 |
-| 2026-10-08 | 2026-10-15 시연 흐름은 기업 목록 → 기업 상세 → 가상 투자 등록 → 상세에서 투자 확인으로 한다. | 가장 짧은 완결 흐름으로 조회와 쓰기를 모두 배포 환경에서 검증할 수 있기 때문이다. |  |
-| 2026-10-08 | P0는 2026-10-15 시연 필수, P1은 2026-10-21 기능 완성 필수, P2는 명세에 없는 선택 기능으로 정의한다. | 2026-10-09가 휴일이고, 일정표의 시연일은 2026-10-15이며 기능 완성일은 2026-10-21이기 때문이다. |  |
-| 2026-10-08 | Won't 항목에는 구현 우선순위를 부여하지 않는다. | 이번 프로젝트에서 하지 않기로 확정한 범위이므로 P0~P2와 구분하기 위해서다. | Won't 항목을 프로젝트 범위에 다시 포함할 때 |
-| 2026-10-12 | API의 모든 금액은 원 단위의 10진수 JSON `string`으로 주고받는다. | `Investment.amount` 각각이 안전한 범위여도 합계가 `Number.MAX_SAFE_INTEGER`를 넘을 수 있고, JavaScript와 JSON 변환 과정에서 정밀도가 손실될 수 있기 때문이다. | 금액 전송 규격이나 데이터베이스 금액 타입을 변경할 때 |
-| 2026-10-08 | 투자 수정·삭제 비밀번호가 일치하지 않으면 `401 Unauthorized`를 반환한다. | 투자 정보 변경에 필요한 비밀번호 검증 실패를 인증 실패로 표현하기 위해서다. | 로그인이나 표준 HTTP 인증 방식을 도입할 때 |
-| 2026-10-08 | API는 `/api` 기본 경로, 공통 성공·실패 응답 모양, 페이지네이션 및 입력 검증 규칙을 사용한다. | 프론트엔드와 백엔드가 일관된 계약을 기준으로 병렬 작업하기 위해서다. | API 버전 관리나 검증 정책을 변경할 때 |
-| 2026-10-08 | 기업 상세 정보와 가상 투자 목록을 별도 API로 제공하고, 투자 목록은 페이지네이션한다. | 투자 페이지 이동 시 변하지 않는 기업 정보를 다시 요청하지 않고 투자 목록만 갱신하기 위해서다. | 기업 상세와 투자 목록을 한 번에 내려야 할 성능상 필요가 생길 때 |
-| 2026-10-08 | 선택 횟수는 `Comparison`과 `ComparisonTarget` 이력을 집계하고, 카테고리는 별도 테이블로 관리한다. | 중복 집계값과 카테고리 문자열 반복을 제거해 3NF 구조를 유지하기 위해서다. | 집계 성능 문제로 비정규화가 필요해질 때 |
-| 2026-10-08 | 실제 누적 투자 금액·가상 투자 금액·매출은 DB에서 `BIGINT`, 기본키는 자동 증가 `INTEGER`로 저장한다. | 원 단위 큰 금액을 정수로 정확히 저장하면서 단순한 식별자를 사용하기 위해서다. | 금액 범위나 식별자 규모가 현재 자료형을 넘을 때 |
-| 2026-10-08 | 가상 투자 삭제는 `deletedAt`을 기록하는 soft delete로 처리하고 목록과 페이지네이션 개수에서는 제외한다. | 삭제된 내역을 보존하면서 사용자에게는 활성 투자 목록만 보여주기 위해서다. | 개인정보 보존 기한이나 물리 삭제 정책이 정해질 때 |
-| 2026-10-08 | 실제 누적 투자 금액은 `Company.actualInvestment`에 시드로 저장하고, 활성 `Investment.amount` 합계는 `virtualInvestment`로 제공한다. | 외부의 실제 투자 실적과 서비스 내 가상 투자 결과를 서로 다른 원본과 의미로 관리하기 위해서다. | 실제 투자 데이터의 갱신 방식이나 가상 투자 집계 전략이 바뀔 때 |
-| 2026-10-08 | 개발 이슈는 화면·API·DB를 함께 완성하는 기능별 세로 단위로 나눈다. | 각 이슈가 배포 환경에서 사용자에게 동작하는 결과를 만들게 하기 위해서다. | 팀 역할이나 작업 흐름을 다시 나눌 때 |
-| 2026-10-12 | 개발자별 로컬 PostgreSQL과 Render 배포 PostgreSQL을 분리하고 스테이징 환경은 두지 않는다. |  |  |
-| 2026-10-12 | Netlify 화면에서 Render 서버로 요청할 때 Express의 `cors` 패키지로 현재 환경의 `CLIENT_ORIGIN`만 허용한다. | 화면과 서버의 주소가 달라 CORS 처리가 필요하기 때문이다. |  |
-| 2026-10-13 | DB 테이블과 컬럼 이름은 snake_case, Prisma 모델과 코드 필드는 camelCase를 사용한다. | 협의된 컨벤션 사항 |  |
-
-## 공통 정렬 및 순위 규칙
-
-- `sortBy`를 생략하면 엔드포인트별 기본 정렬을 사용한다.
-- `sortBy` 없이 `order`만 전달하면 `400 INVALID_QUERY`를 반환한다.
-- 기업을 정렬하는 API에서 기본 기준이나 `sortBy` 값이 같으면 `company.id` 오름차순을 최종 기준으로 사용한다.
-- 순위는 `order`와 관계없이 기준값이 큰 기업부터 계산한다.
-- 기준값이 같은 기업에는 같은 순위를 부여하고, 다음 순위는 동점 기업 수만큼 건너뛴다. 예를 들어 두 기업이 공동 1위이면 다음 기업은 3위다.
-- `company.id`는 동점 기업의 표시 순서만 결정하며 공동 순위를 나누지 않는다.
-- `order`는 응답의 표시 순서만 바꾸며 이미 계산된 순위에는 영향을 주지 않는다.
-
-## 데이터베이스 환경
-
-| 환경 | 데이터베이스 | 연결 정보 | 용도 |
-| --- | --- | --- | --- |
-| 개발 | 개발자별 로컬 PostgreSQL | `backend/.env`의 `DATABASE_URL` | 개발, 개발용 데이터 확인 |
-| 배포 | Render PostgreSQL | Render 환경 변수의 `DATABASE_URL` | 배포 서비스의 운영 데이터 |
-
-- 개발 환경과 배포 환경은 같은 Prisma 스키마와 마이그레이션 파일을 사용한다.
-- 로컬 `.env`와 Render 환경 변수의 `DATABASE_URL`은 서로 다른 데이터베이스를 가리켜야 한다.
-- `.env`는 저장소에 커밋하지 않고 `backend/.env.example`에는 변수 이름과 형식만 제공한다.
-- 로컬 DB의 데이터를 배포 DB로 직접 복사하지 않는다.
-- 로컬 DB에는 기능 확인을 위한 개발용 데이터를 넣을 수 있다.
-- 배포 DB에는 서비스에 필요한 카테고리와 기업 초기 데이터만 시드한다. 개발용 가상 투자와 비교 이력은 시드하지 않는다.
-- 개발 환경에서는 새 마이그레이션 생성과 로컬 DB 초기화를 허용한다.
-- 배포 환경에서는 저장소에 포함된 마이그레이션만 적용하며 마이그레이션 생성이나 DB 초기화를 하지 않는다.
-- 이 프로젝트는 개발 환경과 배포 환경만 사용하며 스테이징 환경은 두지 않는다.
+| 문서 | 설명 |
+| --- | --- |
+| [PLAN.md](docs/PLAN.md) | 기능 목록, 화면과 URL 매핑, 개발 범위 및 우선순위 (Must/Should/Could/Won't) |
+| [ADR.md](docs/ADR.md) | 아키텍처 및 핵심 기술적 의사결정 기록 (비즈니스 룰, 인증 방식, 데이터 타입 등) |
+| [DATABASE.md](docs/DATABASE.md) | 데이터베이스 설계 원칙, ERD, 테이블 및 인덱스 명세 |
+| [API.md](docs/API.md) | 백엔드 HTTP REST API 규격서 (요청/응답 포맷, 유효성 검증, 에러 응답) |
+| [api.http](api.http) | VS Code REST Client 등에서 즉시 테스트 가능한 API 호출 예시 모음 |
+| [issues.md](docs/issues.md) | 단위 기능별 이슈 명세 및 완료 기준 (DoD) |
+| [AGENTS.md](AGENTS.md) | AI 및 팀 작업 방식과 기능별 코드 배치·공유 원칙 |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | 브랜치 전략, 커밋 메시지 규칙, PR 및 협업 컨벤션 |
