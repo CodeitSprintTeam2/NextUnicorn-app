@@ -20,6 +20,27 @@ function parsePositiveInteger(value, defaultValue) {
   return Number(value);
 }
 
+export function parseCompanyId(value) {
+  if (!/^[1-9]\d*$/.test(value)) {
+    throw new ApiError(
+      400,
+      "INVALID_PATH_PARAMETER",
+      "경로 매개변수가 올바르지 않습니다.",
+    );
+  }
+
+  return Number(value);
+}
+
+export function parseCompanyInvestmentsQuery(query) {
+  const page = parsePositiveInteger(query.page, DEFAULT_PAGE);
+  const limit = parsePositiveInteger(query.limit, DEFAULT_LIMIT);
+
+  if (limit > MAX_LIMIT) throw invalidQuery();
+
+  return { page, limit };
+}
+
 export function parseCompaniesQuery(query) {
   const page = parsePositiveInteger(query.page, DEFAULT_PAGE);
   const limit = parsePositiveInteger(query.limit, DEFAULT_LIMIT);
