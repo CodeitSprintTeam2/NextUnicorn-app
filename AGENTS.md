@@ -4,7 +4,7 @@
 
 ## 기준 문서
 
-- 코드와 명세가 다르면 명세를 따른다. `README.md`는 기술·실행·배포·구조, `docs/PLAN.md`는 기능 범위, `docs/API.md`는 API 계약과 정렬·순위, `docs/DATABASE.md`는 DB 환경·시드·마이그레이션의 기준이다. 결정은 `docs/ADR.md`, 테이블은 `backend/prisma/schema.prisma`를 참고한다.
+- 코드와 명세가 다르면 명세를 따른다. `README.md`는 기술·실행·배포·구조, `docs/PLAN.md`는 기능 범위, `docs/API.md`는 API 계약과 정렬·순위, `docs/DATABASE.md`는 DB 환경·시드·마이그레이션의 기준이다. 결정은 `docs/ADR.md`, 테이블은 `backend/prisma/schema.prisma`를 참고한다. 이슈 명세와 완료 기준은 `docs/issues.md`, 브랜치·커밋·PR 컨벤션은 `CONTRIBUTING.md`를 따른다.
 - 주제 설명서 `docs/brief.md`는 수정하지 않는다. 다른 명세도 사용자가 요청하지 않은 변경은 하지 않으며, 수정이 필요하면 먼저 확인한다.
 
 ## 구현 원칙
