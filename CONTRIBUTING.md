@@ -1,6 +1,18 @@
 # 함께 일하는 규칙
 
-사람끼리 지키는 약속을 적는다. 명세는 `README.md`, `api.http`, `backend/prisma/schema.prisma`, `issues.md`에, AI 코딩 도구가 지킬 규칙은 `AGENTS.md`에 있다.
+사람끼리 지키는 브랜치·커밋·PR 약속을 적는다. 프로젝트 명세와 기준 문서는 다음과 같다.
+
+- `README.md`: 기술 스택, 실행·배포 방법, 프로젝트 구조
+- `docs/brief.md`: 원 기능 요구사항 참고용 문서 (수정하지 않음)
+- `docs/PLAN.md`: 기능 범위와 제외 범위
+- `docs/API.md`: API 요청·응답 계약
+- `docs/DATABASE.md`: 데이터베이스 설계와 환경
+- `docs/ADR.md`: 주요 결정 기록
+- `backend/prisma/schema.prisma`: 데이터베이스 모델
+- `docs/issues.md`: 이슈와 완료 기준
+- `api.http`: API 요청 예시
+
+AI 코딩 도구가 지킬 작업 규칙은 `AGENTS.md`에 있다.
 
 ## 브랜치
 
@@ -37,6 +49,7 @@ chore: Prisma 설정 추가
 
 - 기능 PR 하나는 이슈 하나의 끝났다고 볼 기준을 모두 채운다. PR이 너무 커지면 PR이 아니라 이슈를 나눈다.
 - 명세만 먼저 고치는 PR에는 `Closes`를 쓰지 않고, 카드도 In Progress에 둔다.
+- 이 프로젝트에서는 자동화 테스트 코드를 작성하지 않는다. 변경 사항은 API 요청 예시나 브라우저에서 수동으로 확인한다.
 - 리뷰를 부탁받으면 그날 안에 읽고 Approve, Request changes, Comment 중 하나를 남긴다.
 - 리뷰는 바뀐 명세부터 읽고, 「확인한 방법」을 내 컴퓨터에서 따라 해본다.
 - 명세 변경이 다른 사람이 맡은 이슈에 영향을 주면 그 사람을 댓글로 부른다.
