@@ -1,4 +1,4 @@
-import { AppError } from "../errors/app-error.js";
+import { ApiError } from "../errors/api-error.js";
 
 export function errorHandler(error, request, response, next) {
   if (response.headersSent) {
@@ -6,7 +6,7 @@ export function errorHandler(error, request, response, next) {
     return;
   }
 
-  if (error instanceof AppError) {
+  if (error instanceof ApiError) {
     const body = {
       error: {
         code: error.code,

@@ -1,4 +1,4 @@
-import { AppError } from "../../errors/app-error.js";
+import { ApiError } from "../../errors/api-error.js";
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 10;
@@ -7,7 +7,7 @@ const SORT_FIELDS = new Set(["actualInvestment", "revenue", "employees"]);
 const SORT_ORDERS = new Set(["asc", "desc"]);
 
 function invalidQuery() {
-  return new AppError(
+  return new ApiError(
     400,
     "INVALID_QUERY",
     "쿼리 값이 올바르지 않습니다.",
