@@ -2,6 +2,8 @@
 import cors from "cors";
 import express from "express";
 import { env } from "./config/env.js";
+import { companiesRouter } from "./features/companies/companies.router.js";
+import { errorHandler } from "./middleware/error-handler.js";
 
 export const app = express();
 
@@ -46,12 +48,6 @@ app.get("/api/health", (request, response) => {
   });
 });
 
-app.use((error, request, response, next) => {
-  console.error(error);
-  response.status(500).json({
-    error: {
-      code: "INTERNAL_SERVER_ERROR",
-      message: "서버 오류가 발생했습니다.",
-    },
-  });
-});
+app.use("/api/companies", companiesRouter);
+
+app.use(errorHandler);
