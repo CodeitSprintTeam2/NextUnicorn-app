@@ -99,6 +99,7 @@ ViewMyStartup-app/
 │   │   └── main.jsx               # 프론트엔드 진입점
 │   ├── Dockerfile
 │   └── package.json
+├── docs/                          # 프로젝트 문서 및 명세 (brief, PLAN, ADR, API, issues)
 ├── compose.yaml                   # 로컬 개발용 Docker Compose 설정
 ├── render.yaml                    # Render Blueprint 배포 설정
 ├── netlify.toml                   # Netlify 빌드 및 배포 설정
@@ -233,9 +234,9 @@ npm install
 
 | 문서 | 설명 |
 | --- | --- |
-| [PLAN.md](PLAN.md) | 기능 목록, 화면과 URL 매핑, 개발 범위 및 우선순위 (Must/Should/Could/Won't) |
-| [ADR.md](ADR.md) | 아키텍처 및 핵심 기술적 의사결정 기록 (비즈니스 룰, 인증 방식, 데이터 타입 등) |
-| [API.md](API.md) | 백엔드 HTTP REST API 규격서 (요청/응답 포맷, 유효성 검증, 에러 응답) |
+| [PLAN.md](docs/PLAN.md) | 기능 목록, 화면과 URL 매핑, 개발 범위 및 우선순위 (Must/Should/Could/Won't) |
+| [ADR.md](docs/ADR.md) | 아키텍처 및 핵심 기술적 의사결정 기록 (비즈니스 룰, 인증 방식, 데이터 타입 등) |
+| [API.md](docs/API.md) | 백엔드 HTTP REST API 규격서 (요청/응답 포맷, 유효성 검증, 에러 응답) |
 | [api.http](api.http) | VS Code REST Client 등에서 즉시 테스트 가능한 API 호출 예시 모음 |
-| [issues.md](issues.md) | 단위 기능별 이슈 명세 및 완료 기준 (DoD) |
+| [issues.md](docs/issues.md) | 단위 기능별 이슈 명세 및 완료 기준 (DoD) |
 | [AGENTS.md](AGENTS.md) | AI 및 팀 개발 컨벤션, 폴더 구조 원칙, 실패 코드/문구 목록, 정렬 및 순위 규칙 |

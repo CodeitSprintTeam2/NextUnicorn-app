@@ -6,8 +6,8 @@
 
 - 부트캠프 수강생 4명이 만드는 「View My Startup」이다. 2026-10-15에 핵심 흐름을 시연하고 2026-10-21에 기능을 완성한다.
 - 화면은 Netlify, 서버는 Render, 배포 DB는 Render PostgreSQL 18에 둔다. 개발자는 각자의 로컬 PostgreSQL 18을 사용한다.
-- 주제 설명서는 `brief.md`에 있고, 이 파일은 고치지 않는다.
-- 명세는 `README.md`(기술·실행·배포), `PLAN.md`(기능·화면·범위), `ADR.md`(결정 기록), `API.md`(요청·응답 계약), `api.http`(예시 요청), `backend/prisma/schema.prisma`(테이블), `issues.md`(이슈와 완료 기준)다.
+- 주제 설명서는 `docs/brief.md`에 있고, 이 파일은 고치지 않는다.
+- 명세는 `README.md`(기술·실행·배포), `docs/PLAN.md`(기능·화면·범위), `docs/ADR.md`(결정 기록), `docs/API.md`(요청·응답 계약), `api.http`(예시 요청), `backend/prisma/schema.prisma`(테이블), `docs/issues.md`(이슈와 완료 기준)다.
 - 코드와 명세가 다르면 명세를 따른다.
 
 ## 기술
@@ -159,7 +159,7 @@ backend/src/
 
 - 요청과 응답의 필드 이름을 계약과 다르게 쓰거나, 계약에 없는 필드를 더하지 않는다.
 - 실패 문구를 실패 목록과 다르게 쓰지 않는다.
-- PLAN.md 범위에서 「이번엔 안 함」에 있는 기능은 만들지 않는다.
+- `docs/PLAN.md` 범위에서 「이번엔 안 함」에 있는 기능은 만들지 않는다.
 - .env 파일을 열거나 출력하지 않는다.
 
 ## 끝나면 알려줄 것
