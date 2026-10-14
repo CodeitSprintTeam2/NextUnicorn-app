@@ -236,7 +236,9 @@ npm install
 | --- | --- |
 | [PLAN.md](docs/PLAN.md) | 기능 목록, 화면과 URL 매핑, 개발 범위 및 우선순위 (Must/Should/Could/Won't) |
 | [ADR.md](docs/ADR.md) | 아키텍처 및 핵심 기술적 의사결정 기록 (비즈니스 룰, 인증 방식, 데이터 타입 등) |
+| [DATABASE.md](docs/DATABASE.md) | 데이터베이스 설계 원칙, ERD, 테이블 및 인덱스 명세 |
 | [API.md](docs/API.md) | 백엔드 HTTP REST API 규격서 (요청/응답 포맷, 유효성 검증, 에러 응답) |
 | [api.http](api.http) | VS Code REST Client 등에서 즉시 테스트 가능한 API 호출 예시 모음 |
 | [issues.md](docs/issues.md) | 단위 기능별 이슈 명세 및 완료 기준 (DoD) |
 | [AGENTS.md](AGENTS.md) | AI 및 팀 개발 컨벤션, 폴더 구조 원칙, 실패 코드/문구 목록, 정렬 및 순위 규칙 |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | 브랜치 전략, 커밋 메시지 규칙, PR 및 협업 컨벤션 |
