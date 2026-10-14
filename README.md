@@ -106,9 +106,6 @@ ViewMyStartup-app/
 └── package.json                   # 루트 워크스페이스 설정
 ```
 
-- 기능 내부에서만 쓰는 코드는 전역 공통 폴더로 올리지 않고 해당 `features` 폴더 내에 둡니다.
-- 상세한 설계 원칙 및 네이밍 규칙은 [AGENTS.md](AGENTS.md)를 참고합니다.
-
 ---
 
 ## 4. 환경 변수 설명
@@ -240,5 +237,5 @@ npm install
 | [API.md](docs/API.md) | 백엔드 HTTP REST API 규격서 (요청/응답 포맷, 유효성 검증, 에러 응답) |
 | [api.http](api.http) | VS Code REST Client 등에서 즉시 테스트 가능한 API 호출 예시 모음 |
 | [issues.md](docs/issues.md) | 단위 기능별 이슈 명세 및 완료 기준 (DoD) |
-| [AGENTS.md](AGENTS.md) | AI 및 팀 개발 컨벤션, 폴더 구조 원칙, 실패 코드/문구 목록, 정렬 및 순위 규칙 |
+| [AGENTS.md](AGENTS.md) | AI 및 팀 작업 방식과 기능별 코드 배치·공유 원칙 |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | 브랜치 전략, 커밋 메시지 규칙, PR 및 협업 컨벤션 |
