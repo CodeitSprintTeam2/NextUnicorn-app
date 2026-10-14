@@ -3,7 +3,7 @@ import { AppError } from "../../errors/app-error.js";
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 10;
 const MAX_LIMIT = 100;
-const SORT_FIELDS = new Set(["totalInvestment", "revenue", "employees"]);
+const SORT_FIELDS = new Set(["actualInvestment", "revenue", "employees"]);
 const SORT_ORDERS = new Set(["asc", "desc"]);
 
 function invalidQuery() {

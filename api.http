@@ -15,6 +15,10 @@ Accept: application/json
 GET {{baseUrl}}/companies?page=1&limit=10&search=코드&sortBy=revenue&order=desc
 Accept: application/json
 
+### 실제 누적 투자 금액 내림차순 정렬 — 200 OK
+GET {{baseUrl}}/companies?page=1&limit=10&sortBy=actualInvestment&order=desc
+Accept: application/json
+
 ### 기업 상세 조회
 GET {{baseUrl}}/companies/{{companyId}}
 Accept: application/json
@@ -89,4 +93,8 @@ GET {{baseUrl}}/investment-status?page=1&limit=10&sortBy=virtualInvestment&order
 
 ### sortBy 없이 order만 전달 — 400 INVALID_QUERY
 GET {{baseUrl}}/companies?page=1&limit=10&order=asc
+Accept: application/json
+
+### 명세에 없는 정렬 필드 — 400 INVALID_QUERY
+GET {{baseUrl}}/companies?page=1&limit=10&sortBy=totalInvestment&order=desc
 Accept: application/json
