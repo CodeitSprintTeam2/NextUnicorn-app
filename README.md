@@ -1,5 +1,7 @@
 # Next Unicorn
 
+  <img src="./frontend/public/brand/logo-blackbg.png" alt="View My Startup 로고" width="480" />
+
 스타트업 정보 조회, 기업 비교 및 순위 분석, 모의 가상 투자 기능을 제공하는 웹 서비스입니다.
 
 ---
@@ -252,3 +254,5 @@ npm install
 | [issues.md](docs/issues.md) | 단위 기능별 이슈 명세 및 완료 기준 (DoD) |
 | [AGENTS.md](AGENTS.md) | AI 및 팀 작업 방식과 기능별 코드 배치·공유 원칙 |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | 브랜치 전략, 커밋 메시지 규칙, PR 및 협업 컨벤션 |
+
+
