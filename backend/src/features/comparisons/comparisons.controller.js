@@ -1,14 +1,31 @@
 import * as comparisonsService from "./comparisons.service.js";
 
-export async function createComparison(req, res, next) {
-  try {
-    const { myCompanyId, compareCompanyIds } = req.body;
-    const result = await comparisonsService.createComparison(myCompanyId, compareCompanyIds);
+export async function createComparisonController(request, response) {
+  const { myCompanyId, compareCompanyIds } = request.body;
 
-    res.status(200).json({ data: result });
-  } catch (error) {
-    next(error);
-  }
+  const comparison = await comparisonsService.createComparison(
+    myCompanyId,
+    compareCompanyIds,
+  );
+
+  response.status(200).json({
+    data: comparison,
+  });
 }
 
+export async function getComparisonStatusController(request, response) {
+  const page =
+    request.query.page !== undefined ? Number(request.query.page) : undefined;
+  const limit =
+    request.query.limit !== undefined ? Number(request.query.limit) : undefined;
+  const { sortBy, order } = request.query;
 
+  const result = await comparisonsService.getComparisonStatus({
+    page,
+    limit,
+    sortBy,
+    order,
+  });
+
+  response.status(200).json(result);
+}

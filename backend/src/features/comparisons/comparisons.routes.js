@@ -1,8 +1,10 @@
 import { Router } from "express";
-import { createComparison} from "./comparisons.controller.js";
+import {
+  createComparisonController,
+  getComparisonStatusController,
+} from "./comparisons.controller.js";
 
 export const comparisonsRouter = Router();
 
-comparisonsRouter.post("/comparisons", createComparison);
-
-
+comparisonsRouter.post("/comparisons", createComparisonController);
+comparisonsRouter.get("/comparison-status", getComparisonStatusController);

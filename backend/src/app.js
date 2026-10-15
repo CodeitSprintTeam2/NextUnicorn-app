@@ -42,7 +42,6 @@ app.use(
 app.use(express.json());
 
 
-app.use("/api", comparisonsRouter);
 
 app.get("/api/health", (request, response) => {
   response.status(200).json({
@@ -51,7 +50,7 @@ app.get("/api/health", (request, response) => {
     },
   });
 });
-
+app.use("/api", comparisonsRouter);
 app.use("/api/companies", companiesRouter);
 
 app.use(errorHandler);
