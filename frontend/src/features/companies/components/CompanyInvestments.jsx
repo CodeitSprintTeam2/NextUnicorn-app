@@ -79,7 +79,7 @@ export function CompanyInvestments({ company, result, page, onPageChange, onEdit
     <section className={styles.investments}>
       <div className={styles.investmentHeading}>
         <div>
-          <h2>View My Startup에서 받은 투자</h2>
+      <h2>Next Unicorn에서 받은 투자</h2>
           <strong>총 {formatKoreanAmount(company.virtualInvestment)}</strong>
         </div>
         <Button onClick={() => onEdit(INVESTMENT_MODE.create, null)}>

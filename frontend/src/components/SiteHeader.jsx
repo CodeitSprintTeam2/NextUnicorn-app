@@ -18,8 +18,11 @@ export function SiteHeader() {
           to={ROUTES.companies}
           aria-label="View My Startup 홈"
         >
-          <span>view my</span>
-          <strong>startup</strong>
+          <img
+            className={styles.logoImage}
+            src="/brand/logo.png"
+            alt=""
+          />
         </NavLink>
         <nav className={styles.nav} aria-label="주요 메뉴">
           {NAV_LINKS.map(({ to, label, end }) => (
