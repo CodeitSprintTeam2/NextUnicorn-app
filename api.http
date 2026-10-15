@@ -27,6 +27,26 @@ Accept: application/json
 GET {{baseUrl}}/companies/{{companyId}}/investments?page=1&limit=10
 Accept: application/json
 
+### 잘못된 기업 ID로 상세 조회 — 400 INVALID_PATH_PARAMETER
+GET {{baseUrl}}/companies/not-a-number
+Accept: application/json
+
+### 존재하지 않는 기업 상세 조회 — 404 COMPANY_NOT_FOUND
+GET {{baseUrl}}/companies/999999999
+Accept: application/json
+
+### 투자 목록 기본 페이지 확인 — page=1, limit=10, 200 OK
+GET {{baseUrl}}/companies/{{companyId}}/investments
+Accept: application/json
+
+### 잘못된 투자 목록 페이지 — 400 INVALID_QUERY
+GET {{baseUrl}}/companies/{{companyId}}/investments?page=0&limit=10
+Accept: application/json
+
+### 존재하지 않는 기업의 투자 목록 — 404 COMPANY_NOT_FOUND
+GET {{baseUrl}}/companies/999999999/investments?page=1&limit=10
+Accept: application/json
+
 ### 기업 선택 완료 및 비교 결과 조회
 POST {{baseUrl}}/comparisons
 Content-Type: application/json
