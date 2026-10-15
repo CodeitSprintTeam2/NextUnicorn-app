@@ -3,6 +3,8 @@ import cors from "cors";
 import express from "express";
 import { env } from "./config/env.js";
 import { comparisonsRouter } from "./features/comparisons/comparisons.routes.js";
+import { companiesRouter } from "./features/companies/companies.router.js";
+import { errorHandler } from "./middleware/error-handler.js";
 
 export const app = express();
 
@@ -50,13 +52,6 @@ app.get("/api/health", (request, response) => {
   });
 });
 
-app.use((error, request, response, next) => {
-  console.error(error);
+app.use("/api/companies", companiesRouter);
 
-  response.status(error.status || 500).json({
-    error: {
-      code: error.code || "INTERNAL_SERVER_ERROR",
-      message: error.message || "서버 오류가 발생했습니다.",
-    },
-  });
-});
+app.use(errorHandler);
