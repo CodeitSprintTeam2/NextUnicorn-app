@@ -1,31 +1,35 @@
 import * as comparisonsService from "./comparisons.service.js";
+import {
+  parseCreateComparisonBody,
+  parseComparisonStatusQuery,
+} from "./comparisons.validation.js";
 
-export async function createComparisonController(request, response) {
-  const { myCompanyId, compareCompanyIds } = request.body;
+export async function createComparisonController(request, response, next) {
+  try {
+    const { myCompanyId, compareCompanyIds } = parseCreateComparisonBody(
+      request.body,
+    );
 
-  const comparison = await comparisonsService.createComparison(
-    myCompanyId,
-    compareCompanyIds,
-  );
+    const comparison = await comparisonsService.createComparison(
+      myCompanyId,
+      compareCompanyIds,
+    );
 
-  response.status(200).json({
-    data: comparison,
-  });
+    response.status(200).json({
+      data: comparison,
+    });
+  } catch (error) {
+    next(error);
+  }
 }
 
-export async function getComparisonStatusController(request, response) {
-  const page =
-    request.query.page !== undefined ? Number(request.query.page) : undefined;
-  const limit =
-    request.query.limit !== undefined ? Number(request.query.limit) : undefined;
-  const { sortBy, order } = request.query;
+export async function getComparisonStatusController(request, response, next) {
+  try {
+    const query = parseComparisonStatusQuery(request.query);
+    const result = await comparisonsService.getComparisonStatus(query);
 
-  const result = await comparisonsService.getComparisonStatus({
-    page,
-    limit,
-    sortBy,
-    order,
-  });
-
-  response.status(200).json(result);
+    response.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
 }
