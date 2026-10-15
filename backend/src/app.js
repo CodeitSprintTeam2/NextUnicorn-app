@@ -3,6 +3,7 @@ import cors from "cors";
 import express from "express";
 import { env } from "./config/env.js";
 import { companiesRouter } from "./features/companies/companies.router.js";
+import { investmentStatusRouter } from "./features/investments/index.js";
 import { errorHandler } from "./middleware/error-handler.js";
 
 export const app = express();
@@ -49,5 +50,6 @@ app.get("/api/health", (request, response) => {
 });
 
 app.use("/api/companies", companiesRouter);
+app.use("/api/investment-status", investmentStatusRouter);
 
 app.use(errorHandler);
