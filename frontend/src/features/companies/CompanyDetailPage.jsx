@@ -34,6 +34,9 @@ function CompanyDetail({ companyId }) {
   if (company.state !== QUERY_STATE.ready) {
     return (
       <section>
+        <p className={styles.back}>
+          <Link to={ROUTES.companies}>‹ 전체 스타트업 목록</Link>
+        </p>
         <PageHeading title="기업 상세" />
         <FeedbackState
           state={company.state}

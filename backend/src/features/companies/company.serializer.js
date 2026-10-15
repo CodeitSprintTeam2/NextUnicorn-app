@@ -9,3 +9,10 @@ export function serializeCompany(company) {
     employees: company.employees,
   };
 }
+
+export function serializeCompanyDetail(company, virtualInvestment) {
+  return {
+    ...serializeCompany(company),
+    virtualInvestment: virtualInvestment.toString(),
+  };
+}
