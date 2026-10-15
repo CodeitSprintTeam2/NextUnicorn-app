@@ -79,6 +79,48 @@ Accept: application/json
   "passwordConfirm": "1234"
 }
 
+### 비밀번호 확인 불일치로 투자 등록 실패 — 400 VALIDATION_ERROR
+POST {{baseUrl}}/investments
+Content-Type: application/json
+Accept: application/json
+
+{
+  "companyId": {{companyId}},
+  "investorName": "김투자",
+  "amount": "1000000",
+  "comment": "성장 가능성이 높아 보여요.",
+  "password": "1234",
+  "passwordConfirm": "5678"
+}
+
+### 허용 범위를 초과한 금액으로 투자 등록 실패 — 400 VALIDATION_ERROR
+POST {{baseUrl}}/investments
+Content-Type: application/json
+Accept: application/json
+
+{
+  "companyId": {{companyId}},
+  "investorName": "김투자",
+  "amount": "9223372036854775808",
+  "comment": "성장 가능성이 높아 보여요.",
+  "password": "1234",
+  "passwordConfirm": "1234"
+}
+
+### 존재하지 않는 기업에 투자 등록 실패 — 404 COMPANY_NOT_FOUND
+POST {{baseUrl}}/investments
+Content-Type: application/json
+Accept: application/json
+
+{
+  "companyId": 999999999,
+  "investorName": "김투자",
+  "amount": "1000000",
+  "comment": "성장 가능성이 높아 보여요.",
+  "password": "1234",
+  "passwordConfirm": "1234"
+}
+
 ### 가상 투자 수정
 PATCH {{baseUrl}}/investments/{{investmentId}}
 Content-Type: application/json
