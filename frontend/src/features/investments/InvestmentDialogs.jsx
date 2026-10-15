@@ -120,6 +120,7 @@ function InvestmentDialog({ company, mode, investment, onClose, onChanged }) {
         investment={investment}
         pending={pending}
         serverError={error}
+        onFieldChange={() => setError("")}
         onSubmit={saveInvestment}
         onCancel={onClose}
       />
