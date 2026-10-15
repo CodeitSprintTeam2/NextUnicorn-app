@@ -4,6 +4,7 @@ import express from "express";
 import { env } from "./config/env.js";
 import { comparisonsRouter } from "./features/comparisons/comparisons.routes.js";
 import { companiesRouter } from "./features/companies/companies.router.js";
+import { investmentsRouter } from "./features/investments/investments.router.js";
 import { errorHandler } from "./middleware/error-handler.js";
 
 export const app = express();
@@ -52,5 +53,6 @@ app.get("/api/health", (request, response) => {
 });
 app.use("/api", comparisonsRouter);
 app.use("/api/companies", companiesRouter);
+app.use("/api/investments", investmentsRouter);
 
 app.use(errorHandler);

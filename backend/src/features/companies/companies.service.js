@@ -4,7 +4,7 @@ import {
   serializeCompany,
   serializeCompanyDetail,
 } from "./company.serializer.js";
-import { serializeInvestment } from "./investment.serializer.js";
+import { serializeInvestment } from "../../serializers/investment.serializer.js";
 
 const companyRelations = {
   category: { select: { name: true } },

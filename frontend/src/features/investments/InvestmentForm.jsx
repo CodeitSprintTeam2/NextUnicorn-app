@@ -19,6 +19,7 @@ export function InvestmentForm({
   investment,
   pending,
   serverError,
+  onFieldChange,
   onSubmit,
   onCancel,
 }) {
@@ -35,6 +36,7 @@ export function InvestmentForm({
   function handleFieldChange(field, value) {
     setValues((current) => ({ ...current, [field]: value }));
     setErrors((current) => ({ ...current, [field]: undefined }));
+    onFieldChange?.();
   }
 
   function handleSubmit(event) {
