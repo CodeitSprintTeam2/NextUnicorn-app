@@ -1,0 +1,7 @@
+POST http://localhost:3000/api/comparisons
+Content-Type: application/json
+
+{
+  "myCompanyId": 1,
+  "compareCompanyIds": [2,3,4,5,6]
+}

@@ -2,6 +2,7 @@
 import cors from "cors";
 import express from "express";
 import { env } from "./config/env.js";
+import { comparisonsRouter } from "./features/comparisons/comparisons.routes.js";
 
 export const app = express();
 
@@ -38,6 +39,9 @@ app.use(
 
 app.use(express.json());
 
+
+app.use("/api", comparisonsRouter);
+
 app.get("/api/health", (request, response) => {
   response.status(200).json({
     data: {
@@ -48,10 +52,11 @@ app.get("/api/health", (request, response) => {
 
 app.use((error, request, response, next) => {
   console.error(error);
-  response.status(500).json({
+
+  response.status(error.status || 500).json({
     error: {
-      code: "INTERNAL_SERVER_ERROR",
-      message: "서버 오류가 발생했습니다.",
+      code: error.code || "INTERNAL_SERVER_ERROR",
+      message: error.message || "서버 오류가 발생했습니다.",
     },
   });
 });
