@@ -3,6 +3,7 @@
 ## 설계 원칙
 
 - PostgreSQL 18과 Prisma 7을 사용한다.
+- DB 테이블과 컬럼 이름은 snake_case로 작성하고, Prisma 모델과 코드 필드는 camelCase로 작성한다. Prisma의 `@@map`과 `@map`으로 DB 이름에 매핑한다.
 - 기업 데이터는 초기 데이터로 넣고 서비스에서는 조회만 한다.
 - 실제 누적 투자 금액, 가상 투자 금액과 매출은 원 단위 정수이며 PostgreSQL `BIGINT`로 저장한다.
 - API로 금액을 보낼 때는 정밀도 손실을 막기 위해 원 단위의 10진수 JSON `string`으로 변환한다.

@@ -99,7 +99,7 @@ ViewMyStartup-app/
 │   │   └── main.jsx               # 프론트엔드 진입점
 │   ├── Dockerfile
 │   └── package.json
-├── docs/                          # 프로젝트 문서 및 명세 (brief, PLAN, ADR, API, issues)
+├── docs/                          # 프로젝트 문서 및 명세 (brief, PLAN, ADR, API, DATABASE, issues)
 ├── compose.yaml                   # 로컬 개발용 Docker Compose 설정
 ├── render.yaml                    # Render Blueprint 배포 설정
 ├── netlify.toml                   # Netlify 빌드 및 배포 설정
