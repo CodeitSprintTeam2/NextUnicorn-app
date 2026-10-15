@@ -14,6 +14,7 @@
   - `backend/prisma/schema.prisma`: 데이터베이스 테이블과 관계
   - `docs/issues.md`: 이슈와 완료 기준
   - `CONTRIBUTING.md`: 브랜치·커밋·PR 컨벤션
+  - `api.http`: API 요청 예시와 수동 검증 기준
 - 그 밖의 명세도 사용자가 요청하지 않은 변경은 하지 않는다. 명세 수정이 필요하면 먼저 확인한다.
 
 ## 구현
