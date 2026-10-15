@@ -36,12 +36,14 @@ function InvestmentMenu({ investment, onEdit }) {
 }
 
 export function CompanyInvestments({ company, result, page, onPageChange, onEdit }) {
+  const currentPage = result.meta?.page ?? page;
+  const pageSize = result.meta?.limit;
   const columns = [
     {
       key: "rank",
       label: "순위",
       width: "56px",
-      render: (_, index) => getRowNumber(page, index),
+      render: (_, index) => getRowNumber(currentPage, index, pageSize),
     },
     {
       key: "name",
@@ -88,7 +90,7 @@ export function CompanyInvestments({ company, result, page, onPageChange, onEdit
         <>
           <CompanyDataTable rows={rows} columns={columns} />
           <Pagination
-            page={result.meta?.page ?? page}
+            page={currentPage}
             totalPages={result.meta?.totalPages ?? 0}
             onChange={onPageChange}
           />
