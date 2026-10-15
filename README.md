@@ -1,4 +1,4 @@
-# View My Startup
+# Next Unicorn
 
 스타트업 정보 조회, 기업 비교 및 순위 분석, 모의 가상 투자 기능을 제공하는 웹 서비스입니다.
 
@@ -72,7 +72,7 @@ ViewMyStartup-app/
 │   ├── src/
 │   │   ├── config/                # 환경 변수 및 실행 설정
 │   │   ├── lib/                   # 외부 도구 클라이언트 (Prisma Client 등)
-│   │   ├── middlewares/           # 공통 Express 미들웨어 (에러 핸들러 등)
+│   │   ├── middleware/           # 공통 Express 미들웨어 (에러 핸들러 등)
 │   │   ├── utils/                 # 공통 유틸리티
 │   │   ├── features/              # 기능별 3계층 아키텍처 모듈
 │   │   │   ├── companies/         # 기업 관련 (routes, controller, service, repository)
@@ -158,7 +158,13 @@ npm install
    docker compose exec backend npm run prisma:migrate --workspace backend -- --name init
    ```
 
-3. **컨테이너 종료**
+3. **초기 시드 데이터 삽입 (선택)**  
+   12개 카테고리와 1,000개 모의 스타트업 기업 데이터를 데이터베이스에 생성합니다.
+   ```bash
+   docker compose exec backend node backend/prisma/seed.js
+   ```
+
+4. **컨테이너 종료**
    ```bash
    docker compose down
    ```
@@ -182,7 +188,13 @@ npm install
    npm run prisma:migrate --workspace backend -- --name init
    ```
 
-3. **개발 서버 실행**
+3. **초기 시드 데이터 삽입 (선택)**  
+   12개 카테고리와 1,000개 모의 스타트업 기업 데이터를 데이터베이스에 생성합니다.
+   ```bash
+   node --env-file=backend/.env backend/prisma/seed.js
+   ```
+
+4. **개발 서버 실행**
    서로 다른 터미널에서 각각 실행합니다.
    ```bash
    # 터미널 1: 백엔드 API 서버 (포트 3000)
@@ -208,6 +220,7 @@ npm install
 | `npm run build:frontend` | 프론트엔드 프로덕션 빌드 |
 | `npm run prisma:generate --workspace backend` | Prisma Client 코드 재생성 |
 | `npm run prisma:migrate --workspace backend` | 로컬 개발 DB 마이그레이션 적용 및 스키마 반영 |
+| `node --env-file=backend/.env backend/prisma/seed.js` | 12개 카테고리 및 1,000개 스타트업 초기 시드 데이터 삽입 |
 | `npm run prisma:deploy --workspace backend` | 프로덕션 환경에 마이그레이션 적용 |
 
 ---
