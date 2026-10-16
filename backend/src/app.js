@@ -2,6 +2,7 @@
 import cors from "cors";
 import express from "express";
 import { env } from "./config/env.js";
+import { comparisonsRouter } from "./features/comparisons/comparisons.routes.js";
 import { companiesRouter } from "./features/companies/companies.router.js";
 import { investmentStatusRouter } from "./features/investments/index.js";
 import { investmentsRouter } from "./features/investments/investments.router.js";
@@ -42,6 +43,8 @@ app.use(
 
 app.use(express.json());
 
+
+
 app.get("/api/health", (request, response) => {
   response.status(200).json({
     data: {
@@ -49,7 +52,7 @@ app.get("/api/health", (request, response) => {
     },
   });
 });
-
+app.use("/api", comparisonsRouter);
 app.use("/api/companies", companiesRouter);
 app.use("/api/investment-status", investmentStatusRouter);
 app.use("/api/investments", investmentsRouter);
