@@ -160,3 +160,24 @@ Accept: application/json
 ### 명세에 없는 정렬 필드 — 400 INVALID_QUERY
 GET {{baseUrl}}/companies?page=1&limit=10&sortBy=totalInvestment&order=desc
 Accept: application/json
+
+### 내 기업 순위 조회 (매출액 기준 내림차순, 기본값)
+GET {{baseUrl}}/rankings/companies/{{companyId}}?sortBy=revenue
+Accept: application/json
+
+### 내 기업 순위 조회 (고용 인원 기준 오름차순 표시)
+GET {{baseUrl}}/rankings/companies/{{companyId}}?sortBy=employees&order=asc
+Accept: application/json
+
+### 내 기업 순위 조회 실패 — 필수 쿼리 sortBy 누락 (400 INVALID_QUERY)
+GET {{baseUrl}}/rankings/companies/{{companyId}}
+Accept: application/json
+
+### 내 기업 순위 조회 실패 — 잘못된 sortBy 값 (400 INVALID_QUERY)
+GET {{baseUrl}}/rankings/companies/{{companyId}}?sortBy=invalidSort
+Accept: application/json
+
+### 내 기업 순위 조회 실패 — 존재하지 않는 기업 (404 COMPANY_NOT_FOUND)
+GET {{baseUrl}}/rankings/companies/999999999?sortBy=revenue
+Accept: application/json
+

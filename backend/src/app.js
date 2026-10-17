@@ -6,6 +6,7 @@ import { comparisonsRouter } from "./features/comparisons/comparisons.routes.js"
 import { companiesRouter } from "./features/companies/companies.router.js";
 import { investmentStatusRouter } from "./features/investments/index.js";
 import { investmentsRouter } from "./features/investments/investments.router.js";
+import { rankingsRouter } from "./features/rankings/rankings.router.js";
 import { errorHandler } from "./middleware/error-handler.js";
 
 export const app = express();
@@ -56,5 +57,5 @@ app.use("/api", comparisonsRouter);
 app.use("/api/companies", companiesRouter);
 app.use("/api/investment-status", investmentStatusRouter);
 app.use("/api/investments", investmentsRouter);
-
+app.use("/api/rankings", rankingsRouter);
 app.use(errorHandler);

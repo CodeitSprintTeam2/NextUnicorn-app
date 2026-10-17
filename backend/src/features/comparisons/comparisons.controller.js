@@ -18,6 +18,7 @@ export async function createComparisonController(request, response, next) {
     response.status(200).json({
       data: comparison,
     });
+    
   } catch (error) {
     next(error);
   }
