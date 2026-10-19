@@ -60,7 +60,7 @@ export function parseCompanyRankingQuery(query = {}) {
     throw new ApiError(
       400,
       "INVALID_QUERY",
-      "순위 기준이나 정렬 방향이 올바르지 않습니다.",
+      "쿼리 값이 올바르지 않습니다.",
       details,
     );
   }
