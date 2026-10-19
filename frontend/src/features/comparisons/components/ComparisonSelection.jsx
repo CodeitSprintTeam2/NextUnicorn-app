@@ -36,7 +36,9 @@ export function ComparisonSelection({
           </>
         ) : (
           <>
-            <span className={styles.addMark}>+</span>
+            <span className={styles.addMark}>
+              <p className = {styles.plus}>+</p>
+            </span>
             <strong>기업 추가</strong>
           </>
         )}
@@ -69,7 +71,7 @@ export function ComparisonSelection({
                   disabled={pending}
                   onClick={onChooseCompareCompanies}
                 >
-                  ＋<strong>기업 추가</strong>
+                  +<strong>기업 추가</strong>
                 </button>
               )}
             </div>

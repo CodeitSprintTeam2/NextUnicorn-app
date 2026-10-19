@@ -70,7 +70,7 @@ export function ComparisonResultView({
           />
         </div>
         {ranking.state === QUERY_STATE.ready ? (
-          <RankingResults companies={ranking.rows} />
+          <RankingResults companies={ranking.rows} myCompany={myCompany} />
         ) : (
           <FeedbackState state={ranking.state} message={ranking.message || undefined} />
         )}

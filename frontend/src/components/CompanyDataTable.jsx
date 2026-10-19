@@ -17,7 +17,7 @@ function renderCell(row, column, index, rowHref) {
   return row[column.key] ?? "-";
 }
 
-function DesktopTable({ rows, columns, rowHref, getKey }) {
+function DesktopTable({ rows, columns, rowHref, getKey, getRowClassName }) {
   return (
     <div className={styles.desktop}>
       <div className={styles.scroll}>
@@ -36,13 +36,16 @@ function DesktopTable({ rows, columns, rowHref, getKey }) {
             </tr>
           </thead>
           <tbody>
-            {rows.map((row, index) => (
-              <tr key={getKey(row)}>
-                {columns.map((column) => (
-                  <td key={column.key}>{renderCell(row, column, index, rowHref)}</td>
-                ))}
-              </tr>
-            ))}
+            {rows.map((row, index) => {
+              const rowClassName = getRowClassName?.(row, index) ?? "";
+              return (
+                <tr key={getKey(row)} className={rowClassName || undefined}>
+                  {columns.map((column) => (
+                    <td key={column.key}>{renderCell(row, column, index, rowHref)}</td>
+                  ))}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -50,36 +53,39 @@ function DesktopTable({ rows, columns, rowHref, getKey }) {
   );
 }
 
-function MobileCards({ rows, columns, rowHref, getKey }) {
+function MobileCards({ rows, columns, rowHref, getKey, getRowClassName }) {
   const fieldColumns = columns.filter(
     (column) => column.key !== "name" && column.key !== "description",
   );
 
   return (
     <div className={styles.mobile}>
-      {rows.map((row, index) => (
-        <article className={styles.card} key={getKey(row)}>
-          <div className={styles.identity}>
-            {row.name && <CompanyMark company={row} />}
-            <div>
-              {rowHref && row.name ? (
-                <Link to={rowHref(row)}>{row.name}</Link>
-              ) : (
-                <strong>{row.name ?? "기업 정보"}</strong>
-              )}
-              {row.description && <p>{row.description}</p>}
-            </div>
-          </div>
-          <dl className={styles.fields}>
-            {fieldColumns.map((column) => (
-              <div key={column.key}>
-                <dt>{column.label}</dt>
-                <dd>{renderCell(row, column, index, rowHref)}</dd>
+      {rows.map((row, index) => {
+        const rowClassName = getRowClassName?.(row, index) ?? "";
+        return (
+          <article className={`${styles.card} ${rowClassName}`} key={getKey(row)}>
+            <div className={styles.identity}>
+              {row.name && <CompanyMark company={row} />}
+              <div>
+                {rowHref && row.name ? (
+                  <Link to={rowHref(row)}>{row.name}</Link>
+                ) : (
+                  <strong>{row.name ?? "기업 정보"}</strong>
+                )}
+                {row.description && <p>{row.description}</p>}
               </div>
-            ))}
-          </dl>
-        </article>
-      ))}
+            </div>
+            <dl className={styles.fields}>
+              {fieldColumns.map((column) => (
+                <div key={column.key}>
+                  <dt>{column.label}</dt>
+                  <dd>{renderCell(row, column, index, rowHref)}</dd>
+                </div>
+              ))}
+            </dl>
+          </article>
+        );
+      })}
     </div>
   );
 }
@@ -89,13 +95,26 @@ export function CompanyDataTable({
   columns = [],
   rowHref,
   getKey = (row) => row.id,
+  getRowClassName,
 }) {
   if (!rows.length) return null;
 
   return (
     <div className={styles.container}>
-      <DesktopTable rows={rows} columns={columns} rowHref={rowHref} getKey={getKey} />
-      <MobileCards rows={rows} columns={columns} rowHref={rowHref} getKey={getKey} />
+      <DesktopTable
+        rows={rows}
+        columns={columns}
+        rowHref={rowHref}
+        getKey={getKey}
+        getRowClassName={getRowClassName}
+      />
+      <MobileCards
+        rows={rows}
+        columns={columns}
+        rowHref={rowHref}
+        getKey={getKey}
+        getRowClassName={getRowClassName}
+      />
     </div>
   );
 }
