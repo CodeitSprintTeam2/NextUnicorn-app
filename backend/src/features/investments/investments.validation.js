@@ -127,3 +127,16 @@ export function parseUpdateInvestmentBody(body) {
 
   return { password: input.password, update };
 }
+
+export function parseDeleteInvestmentBody(body) {
+  const input = body && typeof body === "object" ? body : {};
+  const details = [];
+
+  addLengthError(details, "password", input.password, 4, 20);
+
+  if (details.length > 0) {
+    throw new ApiError(400, "VALIDATION_ERROR", VALIDATION_MESSAGE, details);
+  }
+
+  return { password: input.password };
+}
