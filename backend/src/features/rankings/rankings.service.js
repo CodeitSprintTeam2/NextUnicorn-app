@@ -35,7 +35,7 @@ export async function getCompanyRanking(companyId, { sortBy, order }) {
     return a.id - b.id;
   });
 
-  //공동 순위 계산
+  // 2. 공동 순위 계산
   let currentRank = 1;
   const ranked = [];
   for (let i = 0; i < sorted.length; i++) {

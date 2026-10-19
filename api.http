@@ -216,7 +216,32 @@ Accept: application/json
 GET {{baseUrl}}/rankings/companies/{{companyId}}?sortBy=invalidSort
 Accept: application/json
 
+### 내 기업 순위 조회 실패 — 잘못된 order 값 (400 INVALID_QUERY)
+GET {{baseUrl}}/rankings/companies/{{companyId}}?sortBy=revenue&order=invalidOrder
+Accept: application/json
+
+### 내 기업 순위 조회 실패 — 허용되지 않은 추가 쿼리 (400 INVALID_QUERY)
+GET {{baseUrl}}/rankings/companies/{{companyId}}?sortBy=revenue&extraParam=123
+Accept: application/json
+
+### 내 기업 순위 조회 실패 — 잘못된 companyId 형식 (400 INVALID_PATH_PARAMETER)
+GET {{baseUrl}}/rankings/companies/invalid-id?sortBy=revenue
+Accept: application/json
+
 ### 내 기업 순위 조회 실패 — 존재하지 않는 기업 (404 COMPANY_NOT_FOUND)
 GET {{baseUrl}}/rankings/companies/999999999?sortBy=revenue
 Accept: application/json
+
+### 내 기업 순위 조회 — order=asc에서도 rank(절대 순위)는 유지되고 표시 순서만 반대로 정렬
+GET {{baseUrl}}/rankings/companies/{{companyId}}?sortBy=revenue&order=asc
+Accept: application/json
+
+### 내 기업 순위 조회 — 동점 기업의 공동 순위 및 다음 순위 건너뛰기 확인
+GET {{baseUrl}}/rankings/companies/{{companyId}}?sortBy=employees
+Accept: application/json
+
+### 내 기업 순위 조회 — 대상 기업이 전체 순위의 최상위(1위) 또는 최하위 경계에 있는 경우
+GET {{baseUrl}}/rankings/companies/1?sortBy=revenue
+Accept: application/json
+
 
