@@ -172,7 +172,29 @@ Accept: application/json
   "password": "1234"
 }
 
-### 가상 투자 삭제
+### 가상 투자 삭제 — 204 No Content
+DELETE {{baseUrl}}/investments/{{investmentId}}
+Content-Type: application/json
+
+{
+  "password": "1234"
+}
+
+### 비밀번호 누락으로 가상 투자 삭제 실패 — 400 VALIDATION_ERROR
+DELETE {{baseUrl}}/investments/{{investmentId}}
+Content-Type: application/json
+
+{}
+
+### 잘못된 비밀번호로 가상 투자 삭제 실패 — 401 INVALID_PASSWORD
+DELETE {{baseUrl}}/investments/{{investmentId}}
+Content-Type: application/json
+
+{
+  "password": "wrong-password"
+}
+
+### 이미 삭제된 가상 투자 재삭제 실패 — 404 INVESTMENT_NOT_FOUND
 DELETE {{baseUrl}}/investments/{{investmentId}}
 Content-Type: application/json
 
