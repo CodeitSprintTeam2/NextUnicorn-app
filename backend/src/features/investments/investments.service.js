@@ -34,3 +34,36 @@ export async function createInvestment(input) {
 
   return { data: serializeInvestment(investment) };
 }
+
+export async function updateInvestment(investmentId, { password, update }) {
+  const investment = await prisma.investment.findFirst({
+    where: {
+      id: investmentId,
+      deletedAt: null,
+    },
+  });
+
+  if (!investment) {
+    throw new ApiError(
+      404,
+      "INVESTMENT_NOT_FOUND",
+      "투자 내역을 찾을 수 없습니다.",
+    );
+  }
+
+  const passwordMatches = await bcrypt.compare(password, investment.passwordHash);
+  if (!passwordMatches) {
+    throw new ApiError(
+      401,
+      "INVALID_PASSWORD",
+      "비밀번호가 일치하지 않습니다.",
+    );
+  }
+
+  const updatedInvestment = await prisma.investment.update({
+    where: { id: investmentId },
+    data: update,
+  });
+
+  return { data: serializeInvestment(updatedInvestment) };
+}

@@ -133,6 +133,45 @@ Accept: application/json
   "password": "1234"
 }
 
+### 수정할 필드 없이 가상 투자 수정 실패 — 400 VALIDATION_ERROR
+PATCH {{baseUrl}}/investments/{{investmentId}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "password": "1234"
+}
+
+### 잘못된 금액으로 가상 투자 수정 실패 — 400 VALIDATION_ERROR
+PATCH {{baseUrl}}/investments/{{investmentId}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "amount": "0",
+  "password": "1234"
+}
+
+### 잘못된 비밀번호로 가상 투자 수정 실패 — 401 INVALID_PASSWORD
+PATCH {{baseUrl}}/investments/{{investmentId}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "comment": "비밀번호가 다르면 저장되지 않습니다.",
+  "password": "wrong-password"
+}
+
+### 존재하지 않는 가상 투자 수정 실패 — 404 INVESTMENT_NOT_FOUND
+PATCH {{baseUrl}}/investments/999999999
+Content-Type: application/json
+Accept: application/json
+
+{
+  "comment": "존재하지 않는 투자입니다.",
+  "password": "1234"
+}
+
 ### 가상 투자 삭제
 DELETE {{baseUrl}}/investments/{{investmentId}}
 Content-Type: application/json
