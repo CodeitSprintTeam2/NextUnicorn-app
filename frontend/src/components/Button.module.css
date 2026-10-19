@@ -25,6 +25,11 @@
   color: var(--accent);
 }
 
+.outline:hover:not(:disabled) {
+  background: var(--accent);
+  color: #000;
+}
+
 .quiet {
   border-color: #4b4b4b;
   background: transparent;
