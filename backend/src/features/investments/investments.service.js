@@ -64,10 +64,20 @@ export async function updateInvestment(investmentId, { password, update }) {
   const passwordMatches = await bcrypt.compare(password, investment.passwordHash);
   if (!passwordMatches) throw invalidPassword();
 
-  const updatedInvestment = await prisma.investment.update({
-    where: { id: investmentId },
-    data: update,
-  });
+  let updatedInvestment;
+
+  try {
+    updatedInvestment = await prisma.investment.update({
+      where: {
+        id: investmentId,
+        deletedAt: null,
+      },
+      data: update,
+    });
+  } catch (error) {
+    if (error?.code === "P2025") throw investmentNotFound();
+    throw error;
+  }
 
   return { data: serializeInvestment(updatedInvestment) };
 }
