@@ -10,6 +10,7 @@ backend/generated/
 .env
 .env.*
 !.env.example
+.env.benchmark
 
 # Logs
 *.log
