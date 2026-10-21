@@ -8,7 +8,7 @@ import { Pagination } from "../../components/Pagination.jsx";
 import { SearchSortBar } from "../../components/SearchSortBar.jsx";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue.js";
 import { usePaginatedQuery } from "../../hooks/usePaginatedQuery.js";
-import { FIRST_PAGE, getRowNumber } from "../../utils/pagination.js";
+import { FIRST_PAGE } from "../../utils/pagination.js";
 import { ROUTES, companyDetailPath } from "../../utils/routes.js";
 import { getSortParams } from "../../utils/sort.js";
 import { listCompanies } from "./companies.api.js";
@@ -33,7 +33,7 @@ export function CompaniesPage() {
       key: "rank",
       label: "순위",
       width: "54px",
-      render: (_, index) => getRowNumber(page, index),
+      render: (company) => company.rank,
     },
     ...COMPANY_IDENTITY_COLUMNS.map((column) => (
       column.key === "description"

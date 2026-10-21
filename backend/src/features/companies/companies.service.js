@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "../../lib/prisma.js";
 import { ApiError } from "../../errors/api-error.js";
 import {
@@ -35,6 +36,34 @@ async function findCompaniesByColumn({ where, page, limit, sortBy, order }) {
   return { data: companies.map(serializeCompany), total };
 }
 
+async function findCompanyRanks({ companyIds, search, sortBy }) {
+  if (!sortBy || companyIds.length === 0) return new Map();
+
+  const column = {
+    actualInvestment: Prisma.sql`c.actual_investment`,
+    revenue: Prisma.sql`c.revenue`,
+    employees: Prisma.sql`c.employees`,
+  }[sortBy];
+  const searchCondition = search
+    ? Prisma.sql`WHERE c.name ILIKE ${`%${search}%`}`
+    : Prisma.empty;
+
+  const rows = await prisma.$queryRaw`
+    WITH ranked AS (
+      SELECT
+        c.id,
+        RANK() OVER (ORDER BY ${column} DESC)::int AS rank
+      FROM companies c
+      ${searchCondition}
+    )
+    SELECT id, rank
+    FROM ranked
+    WHERE id IN (${Prisma.join(companyIds)})
+  `;
+
+  return new Map(rows.map((row) => [row.id, row.rank]));
+}
+
 export async function listCompanies({ page, limit, search, sortBy, order }) {
   const where = buildWhere(search);
   const result = await findCompaniesByColumn({
@@ -44,9 +73,20 @@ export async function listCompanies({ page, limit, search, sortBy, order }) {
     sortBy,
     order,
   });
+  const ranks = await findCompanyRanks({
+    companyIds: result.data.map((company) => company.id),
+    search,
+    sortBy,
+  });
+  const data = result.data.map((company, index) => ({
+    ...company,
+    rank: sortBy
+      ? ranks.get(company.id)
+      : (page - 1) * limit + index + 1,
+  }));
 
   return {
-    data: result.data,
+    data,
     meta: {
       page,
       limit,

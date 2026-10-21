@@ -6,7 +6,7 @@ import { PageHeading } from "../../components/PageHeading.jsx";
 import { Pagination } from "../../components/Pagination.jsx";
 import { SortSelect } from "../../components/SortSelect.jsx";
 import { usePaginatedQuery } from "../../hooks/usePaginatedQuery.js";
-import { FIRST_PAGE, getRowNumber } from "../../utils/pagination.js";
+import { FIRST_PAGE } from "../../utils/pagination.js";
 import { companyDetailPath } from "../../utils/routes.js";
 import { getSortParams } from "../../utils/sort.js";
 import { COMPANY_IDENTITY_COLUMNS } from "../../components/companyTable.js";
@@ -21,13 +21,14 @@ export function ComparisonStatusPage() {
     ...getSortParams(sort),
   });
 
-  const rows = result.rows.map(({ company, myCompanySelections, comparisonSelections }) => ({
+  const rows = result.rows.map(({ company, rank, myCompanySelections, comparisonSelections }) => ({
     ...company,
+    rank,
     myCompanySelections,
     comparisonSelections,
   }));
   const columns = [
-    { key: "rank", label: "순위", render: (_, index) => getRowNumber(page, index) },
+    { key: "rank", label: "순위" },
     ...COMPANY_IDENTITY_COLUMNS,
     {
       key: "myCompanySelections",

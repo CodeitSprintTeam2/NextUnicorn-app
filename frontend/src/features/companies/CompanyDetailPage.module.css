@@ -134,6 +134,7 @@
   background: #333;
 }
 
+
 @media (max-width: 700px) {
   .metric {
     align-items: flex-start;
@@ -165,4 +166,48 @@
     align-items: flex-start;
     flex-direction: column;
   }
+}
+.menuTrigger {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  color: inherit;
+  background: transparent;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.menuTrigger:hover,
+.menuTrigger:focus-visible {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.menuPopover {
+  position: fixed;
+  z-index: 10000;
+  display: grid;
+  width: 120px;
+  overflow: hidden;
+  border: 1px solid #4b4b4b;
+  border-radius: 8px;
+  background: #212121;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.menuPopover button {
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.menuPopover button:hover,
+.menuPopover button:focus-visible {
+  background: #333333;
 }
