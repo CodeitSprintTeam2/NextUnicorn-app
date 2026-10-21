@@ -1,285 +1,446 @@
-# 데이터베이스 성능 벤치마크 가이드
+# PostgreSQL 성능 벤치마크
 
-## 목적
+> **Next Unicorn | 2026.10.21**  
+> PostgreSQL 18 · Prisma 7 · 로컬 벤치마크
 
-이 문서는 PostgreSQL의 인덱스, 정렬, 필터링, 집계 성능을 대용량 데이터로 비교하기 위한 로컬 벤치마크 절차를 설명한다.
+## 1. 목적
 
-주요 측정 대상은 다음과 같다.
+대용량 데이터 환경에서 Next Unicorn의 기업 및 가상투자 조회 성능을 분석하고, 기존 인덱스와 SQL을 활용한 최적화 가능성을 검증합니다.
 
-- 기업별 활성 가상투자 최신순 조회
-- 기업별 활성 가상투자 합계
-- 페이지네이션을 위한 활성 투자 개수 조회
-- `(companyId, deletedAt, createdAt)` 복합 인덱스 적용 전후 차이
-- 데이터가 특정 기업에 집중된 경우와 분산된 경우의 차이
+**주요 측정 대상**
 
-## 주의사항
+- 기업 목록 검색·정렬·페이지네이션
+- 기업별 활성 투자 최신순 조회
+- 활성 투자 건수(`COUNT`) 및 합계(`SUM`)
+- 복합 인덱스 활용 여부와 실행 계획
+- 데이터 분포 및 캐시 상태에 따른 성능 차이
 
-> 이 벤치마크는 반드시 별도의 로컬 PostgreSQL 데이터베이스에서만 실행한다.
+측정에는 `EXPLAIN (ANALYZE, BUFFERS)`, Prisma Query Log, API 응답 시간을 활용했습니다.
 
-- Render 및 운영 데이터베이스에서 실행하지 않는다.
-- 평소 사용하는 개발 DB와 분리된 벤치마크 전용 DB 사용을 권장한다.
-- `.env.benchmark`와 실제 연결 문자열을 Git에 커밋하지 않는다.
-- 연결 문자열이나 비밀번호를 터미널 출력, 문서, 메신저에 공유하지 않는다.
-- 약 1,000만 건의 투자와 인덱스가 생성되므로 충분한 디스크 여유 공간을 확보한다.
-- 시드는 중간에 중단될 수 있으므로 실행 전에 다른 작업을 저장한다.
-- 벤치마크 시드는 `NODE_ENV=production`에서 실행되지 않는다.
+## 2. 테스트 환경
 
-## 데이터 구성
+### 데이터 구성
 
-`backend/prisma/benchmark-seed.js`는 다음 데이터를 생성한다.
+| 기업 유형 | 기업 수 | 기업당 투자 수 |
+|---|---:|---:|
+| 초인기 기업 | 100 | 10,000 |
+| 인기 기업 | 9,900 | 400 |
+| 일반 기업 | 490,000 | 10 |
+| 투자 없는 기업 | 500,000 | 0 |
+| **합계** | **1,000,000** | |
 
-| 구분 | 규모 | 기업당 투자 수 |
-| --- | ---: | ---: |
-| 초인기 기업 | 100개 | 10,000건 |
-| 인기 기업 | 9,900개 | 400건 |
-| 일반 기업 | 490,000개 | 10건 |
-| 투자 없는 기업 | 500,000개 | 0건 |
-| 성능시험용 투자 | 9,860,000건 | 불균등 분포 |
-| 수정·삭제 검증용 투자 | 1,000건 | 개별 bcrypt 해시 |
+별도로 수정·삭제 기능 검증용 투자 1,000건을 생성했습니다.
 
-성능시험용 투자 중 약 15%는 `deletedAt` 값이 있는 삭제 데이터다. 활성 투자 조회 및 합계에는 `deletedAt IS NULL`인 행만 포함한다.
+**최종 데이터 규모**
 
-일반 성능시험용 투자에는 정상적인 bcrypt 해시 풀 1,000개를 재사용한다. 수정·삭제 검증용 투자 1,000건은 각각 독립적인 비밀번호와 bcrypt 해시를 사용한다.
+| 구분 | 건수 |
+|---|---:|
+| 기업 | 1,000,000 |
+| 투자 전체 | 9,861,000 |
+| 활성 투자 | 8,382,000 |
+| 소프트 삭제 투자 | 1,479,000 |
 
-## 사전 준비
+성능시험용 투자 9,860,000건에는 15%의 소프트 삭제 비율을 적용했습니다. 검증용 투자 1,000건은 모두 활성 상태입니다.
 
-### 1. 벤치마크 환경 변수
+### 시드 데이터 오류 및 수정
 
-`backend/.env.benchmark`에 벤치마크 전용 로컬 DB의 `DATABASE_URL`을 설정한다.
+초기 시드 로직에서 일반 기업의 투자 10건이 모두 소프트 삭제되는 오류가 발견됐습니다.
+
+기업별 투자 순번을 기준으로 삭제 여부를 계산하는 로직이 잘못되어, 일반 기업의 데이터 분포가 의도와 다르게 생성된 것이 원인이었습니다.
+
+삭제 비율 계산 방식을 수정하고 다음 과정을 진행했습니다.
+
+1. `--validate-only`로 기업 유형별 삭제 비율 검증
+2. 투자 데이터 재생성
+3. 실제 DB의 전체·활성·삭제 건수 검증
+4. `VACUUM (ANALYZE)`로 통계 갱신
+
+**교훈:** 대용량 시드 데이터는 생성 성공 여부뿐 아니라 실제 분포가 의도와 일치하는지도 검증해야 합니다.
+
+---
+
+## 3. 벤치마크 사용 가이드
+
+### 3.1 주의사항
+
+> **반드시 별도의 로컬 PostgreSQL 벤치마크 DB에서만 실행합니다.**
+
+- Render 및 운영 DB에서는 실행하지 않습니다.
+- 일반 개발 DB와 벤치마크 DB를 분리합니다.
+- `.env.benchmark`와 DB 접속 정보는 Git에 커밋하지 않습니다.
+- 시드 재생성은 기존 투자 데이터를 삭제하므로 실행 전 DB 연결 대상을 확인합니다.
+- 약 986만 건의 투자를 생성하므로 충분한 디스크 공간을 확보합니다.
+
+### 3.2 환경 설정
+
+`backend/.env.benchmark`에 벤치마크 전용 DB 연결 문자열을 설정합니다.
 
 ```dotenv
-DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/BENCHMARK_DATABASE"
+DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/nextunicorn_benchmark"
 ```
 
-위 값은 예시다. 실제 계정 정보는 각 개발자의 로컬 환경에만 저장한다.
+위 계정 정보는 예시이며 실제 연결 정보로 교체해야 합니다.
 
-### 2. 환경 변수 불러오기
-
-저장소 루트에서 다음 순서로 실행한다.
+프로젝트 루트에서 다음 명령을 실행합니다.
 
 ```bash
 cd backend
+
 set -a
 source .env.benchmark
 set +a
-```
 
-환경 변수를 출력해서 확인하지 않는다. 실행 전 각자 `.env.benchmark`가 로컬 벤치마크 DB를 가리키는지 직접 확인한다.
-
-### 3. 마이그레이션 적용
-
-```bash
 npx prisma migrate deploy
 ```
 
-벤치마크 전용 DB에 저장소의 기존 마이그레이션만 적용한다. 새 마이그레이션을 만들지 않는다.
+### 3.3 데이터 검증
 
-## 시드 실행
+실제 데이터를 삽입하기 전에 시드 분포를 검증합니다.
+
+```bash
+node prisma/benchmark-seed.js --validate-only
+```
+
+이 명령은 데이터베이스에 데이터를 추가하거나 삭제하지 않습니다.
+
+**주요 검증 기준**
+
+| 기업 유형 | 전체 투자 | 활성 투자 | 삭제 투자 |
+|---|---:|---:|---:|
+| 초인기 기업 1개 | 10,000 | 8,500 | 1,500 |
+| 인기 기업 1개 | 400 | 340 | 60 |
+| 일반 기업 1개 | 10 | 8~9 | 1~2 |
+
+검증용 투자는 별도로 추가되므로 일부 기업의 최종 건수는 위 표보다 1건 많을 수 있습니다.
+
+### 3.4 최초 시드 생성
+
+검증이 완료되면 다음 명령을 실행합니다.
 
 ```bash
 ALLOW_BENCHMARK_SEED=true node prisma/benchmark-seed.js
 ```
 
-다음 보호 장치가 적용되어 있다.
+시드 스크립트에는 다음 보호 장치가 적용되어 있습니다.
 
-- `ALLOW_BENCHMARK_SEED=true`가 없으면 실행을 중단한다.
-- `NODE_ENV=production`이면 실행을 중단한다.
-- 기존 벤치마크 투자 데이터를 발견하면 중복 생성을 막기 위해 실행을 중단한다.
-- 기업과 투자는 5,000건 단위로 삽입한다.
+- `ALLOW_BENCHMARK_SEED=true` 필수
+- `NODE_ENV=production` 실행 차단
+- 데이터 분포 검증 실패 시 중단
+- 기존 벤치마크 투자 중복 생성 방지
+- 5,000건 단위 데이터 삽입
 
-시드 실행 중에는 처리된 기업 및 투자 건수가 출력된다. 전체 실행 시간은 개발자의 CPU, 메모리, 디스크 및 PostgreSQL 설정에 따라 달라진다.
+### 3.5 투자 데이터 재생성
 
-## 측정 전 준비
+기존 기업·카테고리·스키마·인덱스를 유지하면서 투자 데이터만 재생성할 때 사용합니다.
 
-시드 완료 후 PostgreSQL 쿼리 도구에서 통계를 갱신한다.
+**① 사전 검사**
 
-```sql
-ANALYZE;
+```bash
+ALLOW_BENCHMARK_SEED=true node prisma/benchmark-seed.js \
+  --reseed-investments
 ```
 
-DB 테이블 이름을 확인한다.
+이 명령은 연결 대상과 데이터 건수를 검사한 뒤, 삭제 확인 옵션이 없으므로 실제 데이터 변경 없이 중단됩니다.
 
-```sql
-SELECT schemaname, tablename
-FROM pg_tables
-WHERE schemaname = 'public'
-ORDER BY tablename;
+사전 검사에서는 로컬 호스트, `nextunicorn_benchmark` DB 이름, 기업 100만 건, 투자 9,861,000건 및 벤치마크 데이터 구성을 확인합니다.
+
+**② 재생성 실행**
+
+사전 검사와 DB 연결 대상을 직접 확인한 뒤에만 실행합니다.
+
+```bash
+ALLOW_BENCHMARK_SEED=true node prisma/benchmark-seed.js \
+  --reseed-investments \
+  --confirm-delete-investments \
+  --vacuum-after-reseed
 ```
 
-인덱스 이름과 정의를 확인한다.
+재생성 과정에서는 다음 SQL을 사용합니다.
 
 ```sql
-SELECT tablename, indexname, indexdef
-FROM pg_indexes
-WHERE schemaname = 'public'
-ORDER BY tablename, indexname;
+TRUNCATE TABLE "investments"
+RESTART IDENTITY RESTRICT;
 ```
 
-아래 예시의 `companies`, `investments` 및 인덱스 이름이 실제 DB와 다르면 조회 결과에 나온 이름으로 바꾼다.
+- 기업 및 카테고리 데이터는 유지합니다.
+- 투자 데이터와 해당 시퀀스를 초기화합니다.
+- 인덱스 정의와 스키마는 유지합니다.
+- `CASCADE`를 사용하지 않아 다른 참조 테이블까지 삭제하지 않습니다.
+- 재생성 완료 후 데이터 분포를 검증하고 `VACUUM (ANALYZE)`를 실행합니다.
 
-## 측정 대상 선택
+**주의:** 재생성 중 실패하면 투자 테이블이 일부만 채워진 상태로 남을 수 있습니다. 임의로 안전 검사를 우회하지 말고 현재 DB 상태와 실패 로그를 먼저 확인해야 합니다.
 
-기업 이름은 `Benchmark Company 0000001` 형식으로 생성된다. 다음 세 그룹에서 각각 한 기업을 골라 측정한다.
+### 3.6 성능 측정 방법
 
-| 그룹 | 기업 번호 | 예상 투자 수 |
-| --- | --- | ---: |
-| 초인기 | `0000001`~`0000100` | 10,000건 |
-| 인기 | `0000101`~`0010000` | 400건 |
-| 일반 | `0010001`~`0500000` | 10건 |
-
-```sql
-SELECT id, name
-FROM companies
-WHERE name IN (
-  'Benchmark Company 0000001',
-  'Benchmark Company 0000101',
-  'Benchmark Company 0010001'
-)
-ORDER BY name;
-```
-
-조회된 실제 기업 ID를 이후 SQL의 `:company_id` 자리에 사용한다. 사용 중인 SQL 도구가 이름 기반 변수를 지원하지 않으면 숫자 ID로 직접 교체한다.
-
-## 인덱스가 있는 상태 측정
-
-### 최신 활성 투자 20건
+PostgreSQL에서 다음 형식으로 실행 계획을 확인합니다.
 
 ```sql
 EXPLAIN (ANALYZE, BUFFERS)
-SELECT *
+SELECT id, investor_name, amount, created_at
 FROM investments
-WHERE company_id = :company_id
+WHERE company_id = 68
   AND deleted_at IS NULL
-ORDER BY created_at DESC
-LIMIT 20;
+ORDER BY deleted_at DESC, created_at DESC, id DESC
+LIMIT 20 OFFSET 0;
 ```
 
-### 활성 투자 합계
+**중점 확인 항목**
 
-```sql
-EXPLAIN (ANALYZE, BUFFERS)
-SELECT COALESCE(SUM(amount), 0)
-FROM investments
-WHERE company_id = :company_id
-  AND deleted_at IS NULL;
+| 항목 | 확인 목적 |
+|---|---|
+| `Execution Time` | 실제 SQL 실행 시간 |
+| `Planning Time` | 실행 계획 수립 시간 |
+| `Index Scan` | 인덱스 활용 여부 |
+| `Index Only Scan` | 테이블 접근 최소화 여부 |
+| `Sort` | 별도 정렬 발생 여부 |
+| `actual rows` | 실제 처리한 행 수 |
+| `Buffers: shared hit` | 공유 버퍼 캐시에서 찾은 블록 수 |
+| `Buffers: shared read` | 공유 버퍼로 읽어 들인 블록 수 |
+
+동일한 SQL과 조회 조건으로 여러 번 측정하고, 첫 실행과 캐시가 준비된 이후의 실행을 구분합니다.
+
+---
+
+## 4. 벤치마크 분석 결과
+
+### 4.1 기업 목록 페이지네이션
+
+기업 목록 API는 다음과 같이 OFFSET 기반 페이지네이션을 사용합니다.
+
+```js
+skip: (page - 1) * limit,
+take: limit,
 ```
 
-### 활성 투자 개수
+깊은 페이지에서는 건너뛸 행 수가 증가하므로 조회 비용이 커질 수 있습니다.
+
+복합 인덱스와 커서 기반 조회 방식의 성능을 비교했으나, 현재 서비스는 페이지 번호 기반 UI와 전체 페이지 수를 제공하고 있습니다.
+
+따라서 **깊은 OFFSET 페이지네이션 개선은 이번 작업 범위에서 제외**했습니다.
+
+향후 데이터 규모와 실제 사용자 패턴을 고려하여 재검토할 예정입니다.
+
+### 4.2 투자 건수 및 합계
+
+**COUNT**
 
 ```sql
-EXPLAIN (ANALYZE, BUFFERS)
 SELECT COUNT(*)
 FROM investments
-WHERE company_id = :company_id
+WHERE company_id = 68
   AND deleted_at IS NULL;
 ```
 
-다음 항목을 기록한다.
+- 기존 복합 인덱스를 활용한 `Index Only Scan` 확인
+- `Heap Fetches`를 함께 확인하여 실제 테이블 접근이 얼마나 발생했는지 검증
 
-- `Planning Time`
-- `Execution Time`
-- `Index Scan`, `Index Only Scan`, `Bitmap Index Scan`, `Seq Scan` 여부
-- `Sort` 발생 여부와 정렬 방식
-- `Rows Removed by Filter`
-- `Buffers: shared hit`
-- `Buffers: shared read`
-- 플래너 예상 행 수와 실제 행 수의 차이
-
-## 인덱스가 없는 상태 측정
-
-먼저 투자 테이블에 생성된 인덱스를 확인한다.
+**SUM**
 
 ```sql
-SELECT indexname, indexdef
-FROM pg_indexes
-WHERE schemaname = 'public'
-  AND tablename = 'investments';
-```
-
-`(company_id, deleted_at, created_at)` 복합 인덱스의 실제 이름을 찾는다. 기본키 또는 다른 제약조건 인덱스를 제거하면 안 된다.
-
-인덱스를 영구 삭제하지 않도록 하나의 트랜잭션 안에서 비교한다.
-
-```sql
-BEGIN;
-
-DROP INDEX 실제_복합_인덱스_이름;
-
-EXPLAIN (ANALYZE, BUFFERS)
-SELECT *
+SELECT COALESCE(SUM(amount), 0)
 FROM investments
-WHERE company_id = :company_id
-  AND deleted_at IS NULL
-ORDER BY created_at DESC
-LIMIT 20;
-
-ROLLBACK;
+WHERE company_id = 68
+  AND deleted_at IS NULL;
 ```
 
-`ROLLBACK` 후 다음 SQL로 인덱스가 복구되었는지 확인한다.
+- `amount` 값을 읽기 위한 테이블 접근 발생
+- 첫 실행과 반복 실행에서 캐시 상태에 따른 시간 차이 확인
+- 현재는 추가 집계용 인덱스를 생성하지 않기로 결정
+
+특히 초인기 기업의 `SUM` 조회에서는 첫 실행 약 84.6ms, 캐시가 준비된 반복 실행 약 6~7ms가 관측됐습니다.
+
+따라서 **SQL 실행 시간은 실행 계획뿐 아니라 캐시 상태에도 영향을 받는다**는 점을 확인했습니다.
+
+---
+
+## 5. 투자 목록 정렬 최적화
+
+### 5.1 문제 발견
+
+기존 투자 목록 API는 다음 정렬 조건을 사용했습니다.
+
+```js
+orderBy: [
+  { createdAt: "desc" },
+  { id: "desc" },
+],
+```
+
+투자 테이블에는 이미 다음 복합 인덱스가 존재했습니다.
 
 ```sql
-SELECT indexname, indexdef
-FROM pg_indexes
-WHERE schemaname = 'public'
-  AND tablename = 'investments';
+(company_id, deleted_at, created_at)
 ```
 
-트랜잭션을 지원하지 않거나 자동 커밋을 강제하는 DB 도구에서는 이 방법을 사용하지 않는다.
+그러나 기존 SQL은 초인기 기업의 활성 투자 8,501건을 조회한 뒤 별도로 정렬하고 있었습니다.
 
-## 공정한 측정 방법
+즉, **인덱스를 사용하고 있어도 정렬 최적화까지 이루어지는 것은 아니었습니다.**
 
-1. 인덱스 적용·미적용 시 동일한 SQL과 기업 ID를 사용한다.
-2. 일반, 인기, 초인기 기업을 각각 측정한다.
-3. 각 조건을 최소 5회 실행한다.
-4. 첫 실행과 이후 실행을 구분해서 기록한다.
-5. 첫 실행은 디스크 읽기, 이후 실행은 캐시 영향을 더 많이 받을 수 있다.
-6. 측정 중 다른 대용량 작업과 서버 요청을 최소화한다.
-7. 평균값뿐 아니라 최솟값과 최댓값도 기록한다.
-8. SQL 자체의 성능은 브라우저 응답 시간이 아니라 `EXPLAIN (ANALYZE, BUFFERS)` 결과로 판단한다.
+### 5.2 개선 방법
 
-## 결과 기록표
+정렬 조건에 `deletedAt`을 추가했습니다.
 
-| 날짜 | 기업 그룹 | 인덱스 | 실행 회차 | Planning Time | Execution Time | Scan 방식 | shared hit | shared read | 비고 |
-| --- | --- | --- | ---: | ---: | ---: | --- | ---: | ---: | --- |
-|  | 초인기 | 적용 | 1 |  |  |  |  |  | 첫 실행 |
-|  | 초인기 | 적용 | 2 |  |  |  |  |  | 캐시 후 |
-|  | 초인기 | 미적용 | 1 |  |  |  |  |  | 첫 실행 |
-|  | 인기 | 적용 | 1 |  |  |  |  |  |  |
-|  | 인기 | 미적용 | 1 |  |  |  |  |  |  |
-|  | 일반 | 적용 | 1 |  |  |  |  |  |  |
-|  | 일반 | 미적용 | 1 |  |  |  |  |  |  |
+```js
+orderBy: [
+  { deletedAt: "desc" },
+  { createdAt: "desc" },
+  { id: "desc" },
+],
+```
 
-결과를 공유할 때는 실행 SQL, 실행 계획 전문, PostgreSQL 버전, 데이터 건수와 컴퓨터 사양을 함께 기록한다.
+조회 조건이 `deletedAt: null`이기 때문에 모든 반환 행의 `deletedAt` 값은 동일합니다.
 
-## 검증용 투자 수정·삭제
+따라서 기존 결과 순서를 유지하면서 복합 인덱스의 정렬 순서를 더 효율적으로 활용할 수 있습니다.
 
-검증용 투자자와 비밀번호는 동일한 6자리 번호를 사용한다.
+### 5.3 성능 비교
 
-| 순번 | 투자자 이름 | 비밀번호 |
-| ---: | --- | --- |
-| 1 | `verify-000001` | `benchmark-password-000001` |
-| 2 | `verify-000002` | `benchmark-password-000002` |
-| 1,000 | `verify-001000` | `benchmark-password-001000` |
+**측정 조건:** 초인기 기업 ID 68, 활성 투자 8,501건, 최신 20건 조회
 
-이 값은 로컬 기능 검증 전용이며 실제 사용자 계정이나 실제 비밀번호가 아니다.
+| 항목 | 개선 전 | 개선 후 |
+|---|---|---|
+| 실행 계획 | Index Scan + Sort | Index Scan Backward + Incremental Sort |
+| 인덱스 조회 행 | 8,501건 | 21건 |
+| Shared Buffer Hit | 238 | 9 |
+| SQL 실행 시간 | 8.274ms | 2.612ms |
 
-다음 항목을 화면 또는 `api.http`의 기존 투자 요청 형식으로 확인한다.
+**단일 측정 기준 약 3.2배 빠른 실행 결과**를 확인했습니다.
 
-- 활성 투자만 목록에 표시되는가
-- 최신순 정렬과 페이지네이션이 정상인가
-- 삭제된 투자가 가상투자 합계에서 제외되는가
-- 올바른 검증용 비밀번호로 수정·삭제할 수 있는가
-- 잘못된 비밀번호가 기존 API 계약의 오류로 처리되는가
+개선 후에는 인덱스에서 21건을 읽고 `Incremental Sort`를 수행해 최종 20건을 반환했습니다.
 
-## 해석 예시
+또한 기존 SQL과 개선 SQL의 반환 ID 및 순서가 동일함을 검증했습니다.
 
-- 인덱스 적용 후 `Seq Scan`이 `Index Scan`으로 바뀌고 읽은 버퍼가 감소했다면 인덱스가 탐색 범위를 효과적으로 줄인 것이다.
-- 초인기 기업에서만 실행 시간이 크게 증가한다면 전체 테이블 크기보다 기업별 투자 집중도가 병목일 가능성이 있다.
-- 최신 목록 조회에서 별도의 `Sort`가 사라졌다면 복합 인덱스가 필터링과 정렬을 함께 지원한 것이다.
-- `SUM(amount)`는 대상 행의 값을 읽어야 하므로 목록 조회보다 인덱스 효과가 제한적일 수 있다.
-- 예상 행 수와 실제 행 수가 크게 다르면 `ANALYZE` 실행 여부와 데이터 분포 통계를 확인한다.
+### 5.4 실제 Prisma SQL 검증
 
-## 정리
+Prisma Query Log를 활성화한 상태로 백엔드를 실행합니다.
 
-벤치마크 종료 후에도 Render 또는 운영 DB로 데이터를 복사하지 않는다. 벤치마크 DB 정리가 필요하면 각 개발자가 로컬 전용 DB임을 다시 확인한 후 직접 처리한다.
+```bash
+BENCHMARK_QUERY_LOG=true npm run dev
+```
+
+`BENCHMARK_QUERY_LOG`를 지정하지 않으면 일반 실행에서는 쿼리 로그가 출력되지 않습니다.
+
+Prisma Query Log에서도 다음 정렬 조건이 정상 생성되는 것을 확인했습니다.
+
+```sql
+ORDER BY
+  "public"."investments"."deleted_at" DESC,
+  "public"."investments"."created_at" DESC,
+  "public"."investments"."id" DESC
+```
+
+실제 Prisma가 조회하는 컬럼 구성을 반영한 추가 실행 계획에서도 다음 결과를 확인했습니다.
+
+```text
+Index Scan Backward
+  actual rows=21
+
+Incremental Sort
+  Presorted Key: deleted_at, created_at
+
+Limit
+  actual rows=20
+
+Buffers: shared hit=6
+Execution Time: 1.095 ms
+```
+
+해당 결과는 최적화된 SQL에 대한 별도 실행 측정이며, 앞선 8.274ms와 직접 비교한 수치는 아닙니다.
+
+---
+
+## 6. Prisma 조회 컬럼 최적화
+
+### 6.1 문제 발견
+
+기존 `findMany()`는 모든 투자 컬럼을 조회하여 API 응답에서 사용하지 않는 다음 데이터까지 가져오고 있었습니다.
+
+- `password_hash`
+- `deleted_at`
+
+### 6.2 개선 방법
+
+`serializeInvestment()`에서 실제로 사용하는 7개 필드만 조회하도록 `select`를 추가했습니다.
+
+```js
+select: {
+  id: true,
+  companyId: true,
+  investorName: true,
+  amount: true,
+  comment: true,
+  createdAt: true,
+  updatedAt: true,
+},
+```
+
+**개선 결과**
+
+| 항목 | 개선 전 | 개선 후 |
+|---|---|---|
+| 조회 컬럼 수 | 9개 | 7개 |
+| 비밀번호 해시 조회 | 포함 | 제외 |
+| 소프트 삭제 필터 | 유지 | 유지 |
+| 정렬 조건 | 유지 | 유지 |
+| API 응답 구조 | 기존 | 동일 |
+
+`deleted_at`은 `SELECT`에서 제외되더라도 `WHERE`와 `ORDER BY`에서 계속 사용할 수 있습니다.
+
+변경 후 Prisma `findMany()`의 실행 시간은 약 1.37~1.38ms로 관측됐지만, 컬럼 축소만으로 얻은 성능 향상 폭은 별도 비교가 필요합니다.
+
+이번 변경의 핵심 효과는 **불필요한 데이터 조회 감소와 비밀번호 해시 취급 범위 축소**입니다.
+
+---
+
+## 7. API 검증
+
+별도의 자동화 테스트 코드를 작성하지 않고, 기존 `api.http`를 활용해 수동 검증했습니다.
+
+**검증 요청**
+
+```http
+### 1페이지
+GET {{baseUrl}}/companies/68/investments?page=1&limit=20
+
+### 2페이지
+GET {{baseUrl}}/companies/68/investments?page=2&limit=20
+```
+
+**검증 결과**
+
+- [x] 두 페이지 모두 정상 응답 및 20건 반환
+- [x] 생성일 내림차순 정렬 유지
+- [x] 페이지 간 투자 ID 중복 없음
+- [x] `total: 8501` 유지
+- [x] `totalPages: 426` 유지
+- [x] 기존 API 응답 필드 및 데이터 형식 유지
+- [x] Prisma SQL에서 `password_hash` 조회 제거 확인
+
+SQL 비교를 통해 개선 전후 첫 페이지의 결과 순서도 동일함을 확인했습니다.
+
+단, 생성일이 같은 투자들의 ID 정렬과 개별 소프트 삭제 행의 제외 여부를 모든 경우에 대해 자동 검증한 것은 아닙니다.
+
+---
+
+## 8. 결론 및 향후 작업
+
+### 최종 개선 사항
+
+1. **정렬 최적화:** 기존 복합 인덱스를 활용하여 투자 목록 조회 시 불필요한 행 탐색과 전체 정렬 감소
+2. **컬럼 최적화:** Prisma `select`를 통해 9개 컬럼에서 필요한 7개 컬럼만 조회
+3. **동작 유지:** 기존 API 응답과 페이지네이션 결과 유지
+
+### 남은 작업
+
+깊은 OFFSET 페이지네이션 문제는 알려진 성능 한계로 기록하되, 이번 개선 범위에서는 제외합니다.
+
+### 핵심 배움
+
+**인덱스가 존재하고 사용된다고 해서 항상 최적의 실행 계획이 선택되는 것은 아닙니다.**
+
+실제 실행 계획을 분석하고 SQL 정렬 조건을 조정하는 것만으로도 성능을 개선할 수 있었습니다.
+
+또한 벤치마크에서는 실행 시간뿐 아니라 데이터 분포, 캐시 상태, 처리한 행 수, 버퍼 사용량을 함께 살펴봐야 합니다.
+
+무엇보다 **AI가 생성한 시드 로직이나 SQL도 실제 데이터를 통해 검증해야 한다는 점**을 확인했습니다.
+
+> 본 결과는 로컬 벤치마크 환경에서 측정한 값으로, 운영 환경에서도 동일한 성능 개선 폭이 나타난다고 보장할 수 없습니다.

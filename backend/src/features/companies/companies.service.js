@@ -98,13 +98,27 @@ export async function getCompanyDetail(companyId) {
 export async function listCompanyInvestments({ companyId, page, limit }) {
   await ensureCompanyExists(companyId);
   const where = { companyId, deletedAt: null };
-  const [total, investments] = await prisma.$transaction([
-    prisma.investment.count({ where }),
-    prisma.investment.findMany({
-      where,
-      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-      skip: (page - 1) * limit,
-      take: limit,
+
+const [total, investments] = await prisma.$transaction([
+  prisma.investment.count({ where }),
+  prisma.investment.findMany({
+    where,
+    select: {
+      id: true,
+      companyId: true,
+      investorName: true,
+      amount: true,
+      comment: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+    orderBy: [
+      { deletedAt: "desc" },
+      { createdAt: "desc" },
+      { id: "desc" },
+    ],
+    skip: (page - 1) * limit,
+    take: limit,
     }),
   ]);
 

@@ -267,3 +267,8 @@ GET {{baseUrl}}/rankings/companies/1?sortBy=revenue
 Accept: application/json
 
 
+### 투자 목록 첫 번째 페이지
+GET {{baseUrl}}/companies/68/investments?page=1&limit=20
+
+### 투자 목록 두 번째 페이지
+GET {{baseUrl}}/companies/68/investments?page=2&limit=20
