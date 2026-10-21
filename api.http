@@ -267,3 +267,15 @@ GET {{baseUrl}}/rankings/companies/1?sortBy=revenue
 Accept: application/json
 
 
+
+### 기업 목록 공동 순위 확인 — 내림차순, 200 OK
+GET {{baseUrl}}/companies?page=1&limit=10&sortBy=revenue&order=desc
+
+### 기업 목록 공동 순위 확인 — 표시 순서만 오름차순, 200 OK
+GET {{baseUrl}}/companies?page=1&limit=10&sortBy=revenue&order=asc
+
+### 비교 현황 공동 순위 확인 — 내림차순, 200 OK
+GET {{baseUrl}}/comparison-status?page=1&limit=10&sortBy=myCompanySelections&order=desc
+
+### 비교 현황 공동 순위 확인 — 표시 순서만 오름차순, 200 OK
+GET {{baseUrl}}/comparison-status?page=1&limit=10&sortBy=myCompanySelections&order=asc
