@@ -73,14 +73,21 @@ export async function getComparisonStatus({
 } = {}) {
   // 1. 정렬 조건 구성
   let orderBySql;
+  let rankBySql;
   if (!sortBy) {
     orderBySql = Prisma.sql`c.id ASC`;
+    rankBySql = Prisma.sql`ROW_NUMBER() OVER (ORDER BY c.id ASC)::int`;
   } else {
     const direction = order ?? "desc";
     const column =
       sortBy === "myCompanySelections"
         ? "my_company_selections"
         : "comparison_selections";
+    const rankExpression =
+      sortBy === "myCompanySelections"
+        ? Prisma.sql`COALESCE(mc.cnt, 0)`
+        : Prisma.sql`COALESCE(ct.cnt, 0)`;
+    rankBySql = Prisma.sql`RANK() OVER (ORDER BY ${rankExpression} DESC)::int`;
 
     if (direction === "asc") {
       orderBySql = Prisma.sql`${Prisma.raw(column)} ASC, c.id ASC`;
@@ -108,7 +115,8 @@ export async function getComparisonStatus({
       c.revenue,
       c.employees,
       COALESCE(mc.cnt, 0)::int AS my_company_selections,
-      COALESCE(ct.cnt, 0)::int AS comparison_selections
+      COALESCE(ct.cnt, 0)::int AS comparison_selections,
+      ${rankBySql} AS rank
     FROM companies c
     JOIN categories cat ON cat.id = c.category_id
     LEFT JOIN (
@@ -127,6 +135,7 @@ export async function getComparisonStatus({
 
   // 4. 응답 포맷 구성
   const data = rows.map((row) => ({
+    rank: row.rank,
     company: {
       id: row.id,
       name: row.name,
