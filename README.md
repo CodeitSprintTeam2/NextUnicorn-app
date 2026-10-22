@@ -1,6 +1,6 @@
 <h1>Next Unicorn</h1>
    <div align="center">
-  <img src="./frontend/public/images/readmelogo.png" alt="View My Startup 로고" width="480" />
+  <img src="./frontend/public/brand/readmelogo.png" alt="View My Startup 로고" width="480" />
   <p>스타트업 정보 조회, 기업 비교 및 순위 분석, 모의 가상 투자 기능을 제공하는 웹 서비스입니다.</p>
 </div>
 
@@ -12,7 +12,6 @@
 - [Quick Start](#quick-start)
 - [기술 스택](#기술-스택)
 - [서비스 아키텍처](#서비스-아키텍처)
-- [데이터 모델](#데이터-모델)
 - [로컬 실행 가이드라인](#로컬-실행-가이드라인)
 - [환경 변수](#환경-변수)
 - [배포](#배포)
@@ -23,22 +22,22 @@
 
 ## 프로젝트 소개
 
-### 실제 서비스
 
-- **프론트엔드 서비스**: [https://nextunicorn.netlify.app](https://nextunicorn.netlify.app)
-- **백엔드 헬스체크**: [https://nextunicorn-app.onrender.com/api/health](https://nextunicorn-app.onrender.com/api/health)
+### 플랫폼 서비스
+
+[https://nextunicorn.netlify.app](https://nextunicorn.netlify.app)
 
 ### 주요 기능 및 화면
 
 <div>
   <h4>전체 기업 목록</h4>
-  <img src="./frontend/public/images/companies.png" alt="전체 기업 목록 페이지" width="900" />
+  <img src="./images/companies.png" alt="전체 기업 목록 페이지" width="900" />
   <p>기업 검색·정렬·페이지네이션과 기업 상세 및 가상 투자 내역을 확인합니다.</p>
 
   <br />
 
   <h4>나의 기업 비교</h4>
-  <img src="./frontend/public/images/compare.png" alt="나의 기업 비교 페이지" width="900" />
+  <img src="./images/compare.png" alt="나의 기업 비교 페이지" width="900" />
   <p>기준 기업과 최대 5개 기업을 비교하고 매출액·고용 인원 기준 순위를 확인합니다.</p>
 </div>
 
@@ -46,25 +45,13 @@
 
 ## Quick Start
 
-Docker Compose를 사용해 서비스를 빠르게 실행할 수 있습니다.
+```bash
+docker compose up --build -d
+docker compose exec backend npm run prisma:deploy --workspace backend
 
-1. **서비스 빌드 및 컨테이너 시작**
-   ```bash
-   docker compose up --build
-   ```
-
-2. **데이터베이스 마이그레이션 적용**
-   ```bash
-   docker compose exec backend npm run prisma:deploy --workspace backend
-   ```
-
-3. **초기 시드 데이터 삽입 (선택)**
-   ```bash
-   docker compose exec backend node backend/prisma/seed.js
-   ```
-
-- **프론트엔드 웹 화면**: `http://localhost:5173`
-- **백엔드 헬스체크 API**: `http://localhost:3000/api/health`
+# optional
+docker compose exec backend node backend/prisma/seed.js
+```
 
 자세한 실행 방법은 [로컬 실행 가이드라인](#로컬-실행-가이드라인)을 참고합니다.
 
@@ -118,21 +105,6 @@ flowchart TB
     Netlify -- "HTTPS / JSON" --> RenderAPI
     RenderAPI -- "Prisma" --> Database[("Render PostgreSQL")]
 ```
-
-## 데이터 모델
-
-README에는 핵심 엔티티의 관계만 표시하며, 컬럼과 제약 조건은 [데이터베이스 설계 문서](docs/DATABASE.md)에서 관리합니다.
-
-```mermaid
-erDiagram
-    CATEGORY ||--o{ COMPANY : classifies
-    COMPANY ||--o{ INVESTMENT : receives
-    COMPANY ||--o{ COMPARISON : selected_as_my_company
-    COMPARISON ||--|{ COMPARISON_TARGET : contains_1_to_5
-    COMPANY ||--o{ COMPARISON_TARGET : selected_as_target
-```
-
----
 
 ## 로컬 실행 가이드라인
 
@@ -209,7 +181,10 @@ npm install
 ### 로컬 접속 주소 및 주요 스크립트
 
 - **프론트엔드 웹 화면**: `http://localhost:5173`
-- **백엔드 헬스체크 API**: `http://localhost:3000/api/health`
+- **백엔드 헬스체크**
+  ```bash
+  curl -sf http://localhost:3000/api/health
+  ```
 - **PostgreSQL 로컬 포트**: `localhost:5432`
 
 | 명령 | 설명 |
@@ -282,39 +257,30 @@ ViewMyStartup-app/
 │   │   ├── lib/                   # 외부 도구 클라이언트
 │   │   ├── middleware/            # 공통 Express 미들웨어
 │   │   ├── serializers/           # API 응답 직렬화
-│   │   ├── app.js                 # Express 앱 및 라우터 조합
-│   │   └── server.js              # 서버 진입점 및 포트 리스닝
-│   ├── tests/                     # 백엔드 테스트 코드
-│   ├── Dockerfile                 # 백엔드 컨테이너 이미지 설정
-│   ├── package.json               # 백엔드 패키지 및 스크립트
-│   └── prisma.config.js           # Prisma CLI 설정
+│   │   ├── app.js                 # Express 앱 구성
+│   │   └── server.js              # 서버 진입점
+│   └── Dockerfile                 # 백엔드 컨테이너 설정
 ├── frontend/                      # 프론트엔드 패키지
 │   ├── public/
-│   │   ├── images/                # README 및 서비스 이미지
-│   │   └── _redirects             # Netlify SPA 라우팅 리디렉션
+│   │   ├── brand/                 # 서비스 브랜드 리소스
+│   │   └── _redirects             # Netlify SPA 라우팅
 │   ├── src/
-│   │   ├── api/                   # API 클라이언트 및 공통 통신 설정
+│   │   ├── api/                   # API 클라이언트
 │   │   ├── components/            # 전역 공유 컴포넌트
-│   │   ├── features/              # 기능별 컴포넌트와 비즈니스 로직
+│   │   ├── features/              # 기능별 UI와 비즈니스 로직
 │   │   ├── hooks/                 # 전역 공유 커스텀 훅
-│   │   ├── pages/                 # React Router 페이지 컴포넌트
-│   │   ├── styles/                # 공통 스타일 및 디자인 토큰
-│   │   ├── utils/                 # 전역 공통 헬퍼 함수
-│   │   ├── App.jsx                # 라우트 설정 및 루트 컴포넌트
-│   │   ├── App.module.css         # 루트 컴포넌트 스타일
-│   │   ├── main.jsx               # 프론트엔드 진입점
-│   │   └── styles.css             # 전역 스타일
-│   ├── tests/                     # 프론트엔드 테스트 코드
-│   ├── Dockerfile                 # 프론트엔드 컨테이너 이미지 설정
-│   ├── index.html                 # Vite HTML 진입점
-│   ├── package.json               # 프론트엔드 패키지 및 스크립트
-│   └── vite.config.js             # Vite 개발·빌드 설정
-├── docs/                          # 프로젝트 문서 및 명세
-├── api.http                       # API 요청 및 수동 검증 예시
-├── compose.yaml                   # 로컬 개발용 Docker Compose 설정
-├── netlify.toml                   # Netlify 빌드 및 배포 설정
-├── render.yaml                    # Render Blueprint 배포 설정
-└── package.json                   # npm 워크스페이스 설정
+│   │   ├── pages/                 # 라우트 페이지
+│   │   ├── styles/                # 공통 스타일과 디자인 토큰
+│   │   ├── utils/                 # 공통 유틸리티
+│   │   ├── App.jsx                # 라우트 및 루트 컴포넌트
+│   │   └── main.jsx               # 프론트엔드 진입점
+│   └── Dockerfile                 # 프론트엔드 컨테이너 설정
+├── images/                        # README 스크린샷
+├── docs/                          # 프로젝트 문서와 명세
+├── api.http                       # API 수동 검증 예시
+├── compose.yaml                   # 로컬 Docker Compose 설정
+├── netlify.toml                   # 프론트엔드 배포 설정
+└── render.yaml                    # 백엔드·DB 배포 설정
 ```
 
 </details>
