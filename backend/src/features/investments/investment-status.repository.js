@@ -17,25 +17,17 @@ export async function findInvestmentStatus({ page, limit, sortBy, order }) {
   const offset = (page - 1) * limit;
 
   const statusQuery = Prisma.sql`
-    WITH investment_totals AS (
+    WITH ranked_companies AS (
       SELECT
         company.id,
         company.name,
         company.description,
         category.name AS category,
         company.actual_investment,
-        COALESCE(SUM(investment.amount), 0) AS virtual_investment
+        company.virtual_investment,
+        RANK() OVER (ORDER BY ${sortColumn} DESC) AS rank
       FROM companies AS company
       JOIN categories AS category ON category.id = company.category_id
-      LEFT JOIN investments AS investment
-        ON investment.company_id = company.id
-        AND investment.deleted_at IS NULL
-      GROUP BY company.id, category.name
-    ), ranked_companies AS (
-      SELECT
-        *,
-        RANK() OVER (ORDER BY ${sortColumn} DESC) AS rank
-      FROM investment_totals
     )
     SELECT
       id,

@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import bcrypt from "bcrypt";
 import { ApiError } from "../../errors/api-error.js";
 import { prisma } from "../../lib/prisma.js";
@@ -29,6 +30,22 @@ function invalidPassword() {
   );
 }
 
+async function lockInvestment(tx, investmentId) {
+  const rows = await tx.$queryRaw`
+    SELECT
+      id,
+      company_id AS "companyId",
+      amount,
+      password_hash AS "passwordHash",
+      deleted_at AS "deletedAt"
+    FROM investments
+    WHERE id = ${investmentId}
+    FOR UPDATE
+  `;
+
+  return rows[0];
+}
+
 export async function createInvestment(input) {
   const company = await prisma.company.findUnique({
     where: { id: input.companyId },
@@ -38,14 +55,27 @@ export async function createInvestment(input) {
   if (!company) throw companyNotFound();
 
   const passwordHash = await bcrypt.hash(input.password, PASSWORD_HASH_ROUNDS);
-  const investment = await prisma.investment.create({
-    data: {
-      companyId: input.companyId,
-      investorName: input.investorName,
-      amount: input.amount,
-      comment: input.comment,
-      passwordHash,
-    },
+  const investment = await prisma.$transaction(async (tx) => {
+    const createdInvestment = await tx.investment.create({
+      data: {
+        companyId: input.companyId,
+        investorName: input.investorName,
+        amount: input.amount,
+        comment: input.comment,
+        passwordHash,
+      },
+    });
+
+    await tx.company.update({
+      where: { id: input.companyId },
+      data: {
+        virtualInvestment: {
+          increment: new Prisma.Decimal(input.amount.toString()),
+        },
+      },
+    });
+
+    return createdInvestment;
   });
 
   return { data: serializeInvestment(investment) };
@@ -67,12 +97,30 @@ export async function updateInvestment(investmentId, { password, update }) {
   let updatedInvestment;
 
   try {
-    updatedInvestment = await prisma.investment.update({
-      where: {
-        id: investmentId,
-        deletedAt: null,
-      },
-      data: update,
+    updatedInvestment = await prisma.$transaction(async (tx) => {
+      const current = await lockInvestment(tx, investmentId);
+      if (!current || current.deletedAt !== null) throw investmentNotFound();
+
+      const updated = await tx.investment.update({
+        where: { id: investmentId },
+        data: update,
+      });
+
+      if (update.amount !== undefined) {
+        const amountDifference = update.amount - current.amount;
+        if (amountDifference !== 0n) {
+          await tx.company.update({
+            where: { id: current.companyId },
+            data: {
+              virtualInvestment: {
+                increment: new Prisma.Decimal(amountDifference.toString()),
+              },
+            },
+          });
+        }
+      }
+
+      return updated;
     });
   } catch (error) {
     if (error?.code === "P2025") throw investmentNotFound();
@@ -95,13 +143,22 @@ export async function deleteInvestment(investmentId, password) {
   const passwordMatches = await bcrypt.compare(password, investment.passwordHash);
   if (!passwordMatches) throw invalidPassword();
 
-  const result = await prisma.investment.updateMany({
-    where: {
-      id: investmentId,
-      deletedAt: null,
-    },
-    data: { deletedAt: new Date() },
-  });
+  await prisma.$transaction(async (tx) => {
+    const current = await lockInvestment(tx, investmentId);
+    if (!current || current.deletedAt !== null) throw investmentNotFound();
 
-  if (result.count === 0) throw investmentNotFound();
+    await tx.investment.update({
+      where: { id: investmentId },
+      data: { deletedAt: new Date() },
+    });
+
+    await tx.company.update({
+      where: { id: current.companyId },
+      data: {
+        virtualInvestment: {
+          decrement: new Prisma.Decimal(current.amount.toString()),
+        },
+      },
+    });
+  });
 }

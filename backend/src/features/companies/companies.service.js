@@ -125,26 +125,36 @@ async function ensureCompanyExists(companyId) {
 
 export async function getCompanyDetail(companyId) {
   const company = await findCompanyOrThrow(companyId);
-  const aggregate = await prisma.investment.aggregate({
-    where: { companyId, deletedAt: null },
-    _sum: { amount: true },
-  });
 
   return {
-    data: serializeCompanyDetail(company, aggregate._sum.amount ?? 0n),
+    data: serializeCompanyDetail(company, company.virtualInvestment),
   };
 }
 
 export async function listCompanyInvestments({ companyId, page, limit }) {
   await ensureCompanyExists(companyId);
   const where = { companyId, deletedAt: null };
-  const [total, investments] = await prisma.$transaction([
-    prisma.investment.count({ where }),
-    prisma.investment.findMany({
-      where,
-      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-      skip: (page - 1) * limit,
-      take: limit,
+
+const [total, investments] = await prisma.$transaction([
+  prisma.investment.count({ where }),
+  prisma.investment.findMany({
+    where,
+    select: {
+      id: true,
+      companyId: true,
+      investorName: true,
+      amount: true,
+      comment: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+    orderBy: [
+      { deletedAt: "desc" },
+      { createdAt: "desc" },
+      { id: "desc" },
+    ],
+    skip: (page - 1) * limit,
+    take: limit,
     }),
   ]);
 

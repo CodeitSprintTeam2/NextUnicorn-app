@@ -267,6 +267,11 @@ GET {{baseUrl}}/rankings/companies/1?sortBy=revenue
 Accept: application/json
 
 
+### 투자 목록 첫 번째 페이지
+GET {{baseUrl}}/companies/68/investments?page=1&limit=20
+
+### 투자 목록 두 번째 페이지
+GET {{baseUrl}}/companies/68/investments?page=2&limit=20
 
 ### 기업 목록 공동 순위 확인 — 내림차순, 200 OK
 GET {{baseUrl}}/companies?page=1&limit=10&sortBy=revenue&order=desc

@@ -22,6 +22,7 @@ model Company {
   description              String             @db.Text
   categoryId               Int                @map("category_id")
   actualInvestment         BigInt             @map("actual_investment")
+  virtualInvestment        Decimal            @default(0) @map("virtual_investment") @db.Decimal(38, 0)
   revenue                  BigInt
   employees                Int
   createdAt                DateTime           @default(now()) @map("created_at")
@@ -33,6 +34,7 @@ model Company {
 
   @@index([categoryId])
   @@index([actualInvestment])
+  @@index([virtualInvestment(sort: Desc), id(sort: Asc)])
   @@index([revenue])
   @@index([employees])
   @@map("companies")
