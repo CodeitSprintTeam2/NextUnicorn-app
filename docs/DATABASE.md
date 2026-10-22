@@ -5,7 +5,8 @@
 - PostgreSQL 18과 Prisma 7을 사용한다.
 - DB 테이블과 컬럼 이름은 snake_case로 작성하고, Prisma 모델과 코드 필드는 camelCase로 작성한다. Prisma의 `@@map`과 `@map`으로 DB 이름에 매핑한다.
 - 기업 데이터는 초기 데이터로 넣고 서비스에서는 조회만 한다.
-- 실제 누적 투자 금액, 가상 투자 금액과 매출은 원 단위 정수이며 PostgreSQL `BIGINT`로 저장한다.
+- 실제 누적 투자 금액, 개별 가상 투자 금액과 매출은 원 단위 정수이며 PostgreSQL `BIGINT`로 저장한다.
+- 기업별 가상 투자 합계는 PostgreSQL `DECIMAL(38, 0)`으로 저장하고, 투자 변경과 같은 트랜잭션에서 갱신한다.
 - API로 금액을 보낼 때는 정밀도 손실을 막기 위해 원 단위의 10진수 JSON `string`으로 변환한다.
 - 투자 비밀번호는 원문을 저장하지 않고 bcrypt 해시만 저장한다.
 - 가상 투자 삭제는 물리 삭제하지 않고 `Investment.deletedAt`에 삭제 시각을 기록한다.
@@ -56,6 +57,7 @@ erDiagram
         text description
         int categoryId FK
         bigint actualInvestment
+        decimal virtualInvestment
         bigint revenue
         int employees
         datetime createdAt
@@ -147,6 +149,7 @@ Mermaid 표기에서 `||`는 정확히 1개, `o{`는 0개 이상, `|{`는 1개 �
 | `description` | `String` / `TEXT` | 불가 |  | 기업 소개 |
 | `categoryId` | `Int` / `INTEGER` | 불가 | FK → `Category.id`, RESTRICT | 카테고리 식별자 |
 | `actualInvestment` | `BigInt` / `BIGINT` | 불가 | 인덱스 | 시드로 제공하는 실제 누적 투자 금액 |
+| `virtualInvestment` | `Decimal` / `DECIMAL(38,0)` | 불가 | 기본값 `0` | 활성 가상 투자 합계. 투자 변경과 같은 트랜잭션에서 유지 |
 | `revenue` | `BigInt` / `BIGINT` | 불가 | 인덱스 | 매출액 |
 | `employees` | `Int` / `INTEGER` | 불가 | 인덱스 | 고용 인원 |
 | `createdAt` | `DateTime` / `TIMESTAMP` | 불가 | 기본값 현재 시각 | 생성 시각 |
@@ -218,19 +221,19 @@ Mermaid 표기에서 `||`는 정확히 1개, `o{`는 0개 이상, `|{`는 1개 �
 - 기업 정보는 `Investment`, `Comparison`, `ComparisonTarget`에 중복 저장하지 않고 외래 키로 참조한다.
 - 내 기업·비교 기업 선택 횟수를 `Company`에 중복 저장하지 않고 비교 이력에서 계산한다.
 - 실제 누적 투자 금액은 `Company.actualInvestment`에 시드 데이터로 저장한다.
-- 가상 투자 합계는 `Company`에 저장하지 않고 `deletedAt IS NULL`인 `Investment.amount`를 합산한다.
+- 가상 투자 합계는 `Company.virtualInvestment`에 저장한다. 활성 투자(`deletedAt IS NULL`)의 `amount` 합계를 나타내며, 투자 등록·금액 수정·soft delete와 같은 트랜잭션에서 함께 갱신한다. 초기값은 마이그레이션에서 기존 활성 투자 행을 집계해 채운다.
 
 ## 파생 값과 집계
 
 | 값 | 계산 기준 |
 | --- | --- |
 | 기업별 실제 누적 투자 금액 | `Company.actualInvestment` |
-| 기업별 가상 투자 합계 | 활성 `Investment.amount` 합계. 활성 투자 내역이 없으면 `0` |
+| 기업별 가상 투자 합계 | `Company.virtualInvestment`. 활성 `Investment.amount` 합계를 반영하며 활성 투자 내역이 없으면 `0` |
 | 내 기업 선택 횟수 | `Comparison.myCompanyId`별 행 개수 |
 | 비교 기업 선택 횟수 | `ComparisonTarget.companyId`별 행 개수 |
 | 매출액·고용 인원 순위 | `Company.revenue` 또는 `Company.employees` 정렬 결과 |
 
-`virtualInvestment`와 선택 횟수 같은 파생 값은 원본 데이터와 불일치하지 않도록 별도 열에 저장하지 않는다. 조회 성능이 실제로 문제가 된 뒤에만 캐시나 집계 테이블 도입을 다시 검토한다. `actualInvestment`는 외부에서 주어진 실제 투자 실적의 원본 값이므로 `Company`에 저장한다.
+`virtualInvestment`는 파생 값이지만 투자 현황 조회에서 전체 투자 행을 매번 합산할 때 트랜잭션 시간 초과가 발생해 `Company`에 비정규화하여 저장한다. 투자 변경과 합계 변경을 하나의 트랜잭션으로 처리하고, 기존 데이터는 마이그레이션에서 초기 집계한다. 선택 횟수는 계속 비교 이력에서 계산한다. `actualInvestment`는 외부에서 주어진 실제 투자 실적의 원본 값이므로 `Company`에 저장한다.
 
 ## Soft Delete 규칙
 
@@ -248,6 +251,7 @@ Mermaid 표기에서 `||`는 정확히 1개, `o{`는 0개 이상, `|{`는 1개 �
 | Company | `UNIQUE(name)` | 기업명 중복 방지와 검색 |
 | Company | `INDEX(categoryId)` | 카테고리 관계 조회 |
 | Company | `INDEX(actualInvestment)` | 실제 누적 투자 금액 정렬 |
+| Company | `INDEX(virtualInvestment DESC, id ASC)` | 가상 투자 현황의 내림차순 정렬 및 동액 기업 ID 오름차순 표시 |
 | Company | `INDEX(revenue)` | 매출액 정렬과 순위 계산 |
 | Company | `INDEX(employees)` | 고용 인원 정렬과 순위 계산 |
 | Investment | `INDEX(companyId, deletedAt, createdAt)` | 기업별 활성 투자 최신순 목록 조회 |

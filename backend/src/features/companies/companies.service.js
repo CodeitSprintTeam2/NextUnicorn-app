@@ -125,13 +125,9 @@ async function ensureCompanyExists(companyId) {
 
 export async function getCompanyDetail(companyId) {
   const company = await findCompanyOrThrow(companyId);
-  const aggregate = await prisma.investment.aggregate({
-    where: { companyId, deletedAt: null },
-    _sum: { amount: true },
-  });
 
   return {
-    data: serializeCompanyDetail(company, aggregate._sum.amount ?? 0n),
+    data: serializeCompanyDetail(company, company.virtualInvestment),
   };
 }
 

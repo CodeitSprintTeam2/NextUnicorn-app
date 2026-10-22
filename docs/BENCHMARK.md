@@ -389,9 +389,96 @@ select: {
 
 이번 변경의 핵심 효과는 **불필요한 데이터 조회 감소와 비밀번호 해시 취급 범위 축소**입니다.
 
+## 7. 투자 현황 합계 사전 집계
+
+### 7.1 변경 내용
+
+투자 현황 조회에서 전체 활성 투자 행을 매번 합산하던 쿼리는 대량 데이터에서 트랜잭션 시간 초과(`PrismaClientKnownRequestError`, `P2028`)가 발생했습니다. 이를 줄이기 위해 회사별 활성 투자 합계를 `companies.virtual_investment`에 저장합니다.
+
+- 새 마이그레이션은 `DECIMAL(38, 0) NOT NULL DEFAULT 0` 컬럼을 추가하고 기존 활성 투자(`deleted_at IS NULL`)를 한 번 집계해 초기값으로 채웁니다.
+- 투자 등록, 금액 수정, soft delete와 합계 갱신은 같은 트랜잭션에서 처리합니다.
+- 기업 상세와 투자 현황 조회는 저장된 합계 컬럼을 읽습니다.
+- API 필드와 응답 형식은 변경하지 않습니다.
+
+### 7.2 EXPLAIN 전후 비교
+
+동일한 로컬 벤치마크 DB와 데이터 상태에서 실행합니다. `EXPLAIN ANALYZE`는 쿼리를 실제 실행하므로 운영 DB에서는 사용하지 않습니다.
+
+**변경 전: 활성 투자 전체 합산**
+
+```sql
+EXPLAIN (ANALYZE, BUFFERS, SETTINGS, SUMMARY)
+WITH investment_totals AS (
+  SELECT
+    company.id,
+    company.name,
+    company.description,
+    category.name AS category,
+    company.actual_investment,
+    COALESCE(SUM(investment.amount), 0) AS virtual_investment
+  FROM companies AS company
+  JOIN categories AS category ON category.id = company.category_id
+  LEFT JOIN investments AS investment
+    ON investment.company_id = company.id
+    AND investment.deleted_at IS NULL
+  GROUP BY company.id, category.name
+), ranked_companies AS (
+  SELECT
+    *,
+    RANK() OVER (ORDER BY virtual_investment DESC) AS rank
+  FROM investment_totals
+)
+SELECT *
+FROM ranked_companies
+ORDER BY virtual_investment DESC, id ASC
+LIMIT 10 OFFSET 0;
+```
+
+**변경 후: 저장된 합계 사용**
+
+```sql
+EXPLAIN (ANALYZE, BUFFERS, SETTINGS, SUMMARY)
+WITH ranked_companies AS (
+  SELECT
+    company.id,
+    company.name,
+    company.description,
+    category.name AS category,
+    company.actual_investment,
+    company.virtual_investment,
+    RANK() OVER (ORDER BY company.virtual_investment DESC) AS rank
+  FROM companies AS company
+  JOIN categories AS category ON category.id = company.category_id
+)
+SELECT *
+FROM ranked_companies
+ORDER BY virtual_investment DESC, id ASC
+LIMIT 10 OFFSET 0;
+```
+
+두 결과의 `Execution Time`, `shared hit/read`, `temp read/written`, `Sort` 및 `WindowAgg` 노드를 비교합니다. 변경 후 계획에서 `investments` 접근과 그룹 집계가 사라졌는지 확인합니다. 전체 기업 순위 계산은 남아 있으므로 정렬·순위 계산이 다음 병목이 되는지도 확인합니다. 각 쿼리는 한 번 예열하고 여러 번 반복해 중앙값을 비교하며, 결과에서 `LIMIT` 때문에 출력 행이 10개여도 실제 처리된 행 수를 함께 기록합니다.
+
+### 7.3 정합성 및 API 확인
+
+투자 등록, 금액 수정, 코멘트만 수정, soft delete, 삭제된 투자 재삭제 후 저장된 합계가 활성 투자 원본 합계와 일치하는지 확인합니다.
+
+```sql
+SELECT
+  company.id,
+  company.virtual_investment AS stored_total,
+  COALESCE(SUM(investment.amount) FILTER (WHERE investment.deleted_at IS NULL), 0) AS source_total
+FROM companies AS company
+LEFT JOIN investments AS investment ON investment.company_id = company.id
+GROUP BY company.id, company.virtual_investment
+HAVING company.virtual_investment <>
+  COALESCE(SUM(investment.amount) FILTER (WHERE investment.deleted_at IS NULL), 0);
+```
+
+불일치가 없으면 위 검증 쿼리는 0행을 반환해야 합니다. API 응답과 정렬은 기존 `api.http`의 전체 투자 현황, 기본 정렬, 오름차순 공동 순위 요청으로 확인합니다.
+
 ---
 
-## 7. API 검증
+## 8. API 검증
 
 별도의 자동화 테스트 코드를 작성하지 않고, 기존 `api.http`를 활용해 수동 검증했습니다.
 
@@ -421,13 +508,14 @@ SQL 비교를 통해 개선 전후 첫 페이지의 결과 순서도 동일함�
 
 ---
 
-## 8. 결론 및 향후 작업
+## 9. 결론 및 향후 작업
 
 ### 최종 개선 사항
 
 1. **정렬 최적화:** 기존 복합 인덱스를 활용하여 투자 목록 조회 시 불필요한 행 탐색과 전체 정렬 감소
 2. **컬럼 최적화:** Prisma `select`를 통해 9개 컬럼에서 필요한 7개 컬럼만 조회
-3. **동작 유지:** 기존 API 응답과 페이지네이션 결과 유지
+3. **합계 사전 집계:** 투자 등록·금액 수정·soft delete와 회사별 합계 갱신을 같은 트랜잭션으로 처리
+4. **동작 유지:** 기존 API 응답과 페이지네이션 결과 유지
 
 ### 남은 작업
 

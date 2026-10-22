@@ -12,7 +12,7 @@
 
 금액 문자열은 숫자로만 구성하고, 입력 금액은 PostgreSQL `BIGINT` 최댓값인 `9223372036854775807` 이하만 허용한다. 비밀번호는 투자 등록·수정·삭제 요청에서만 받고 응답에는 포함하지 않는다.
 
-`actualInvestment`는 시드 데이터로 저장한 기업의 실제 누적 투자 금액이다. `virtualInvestment`는 `Company`에 저장하지 않고 해당 기업의 `deletedAt`이 `null`인 `Investment.amount`를 합산해 반환하며, 활성 가상 투자 내역이 없으면 `0`이다.
+`actualInvestment`는 시드 데이터로 저장한 기업의 실제 누적 투자 금액이다. `virtualInvestment`는 `Company`에 저장된 활성 가상 투자 합계로, 투자 등록·금액 수정·soft delete와 같은 트랜잭션에서 갱신한다. 활성 가상 투자 내역이 없으면 `0`이다. 개별 투자 입력은 PostgreSQL `BIGINT` 범위로 제한하며, 여러 투자 금액의 합계는 `DECIMAL(38, 0)` 범위에서 관리한다.
 
 ## 공통 계약
 
