@@ -181,15 +181,14 @@ npm install
 ### 로컬 접속 주소 및 주요 스크립트
 
 - **프론트엔드 웹 화면**: `http://localhost:5173`
-- **백엔드 헬스체크**
-  ```bash
-  curl -sf http://localhost:3000/api/health
-  ```
+
 - **PostgreSQL 로컬 포트**: `localhost:5432`
 
 | 명령 | 설명 |
 | --- | --- |
-| `npm run dev:backend` | 백엔드 개발 서버 실행 (`--watch` 모드) |
+| `npm run dev:backend` | 로컬 `.env`를 사용하는 백엔드 개발 서버 실행 (`--watch` 모드) |
+| `npm run dev:docker --workspace backend` | Docker Compose용 백엔드 개발 서버 실행 (`--watch`, `.env` 파일 미사용) |
+| `npm run start --workspace backend` | 주입된 환경 변수로 백엔드 서버 실행 |
 | `npm run dev:frontend` | 프론트엔드 Vite 개발 서버 실행 |
 | `npm run build:frontend` | 프론트엔드 프로덕션 빌드 |
 | `npm run prisma:generate --workspace backend` | Prisma Client 코드 재생성 |

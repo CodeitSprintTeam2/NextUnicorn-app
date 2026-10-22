@@ -2,7 +2,7 @@ FROM node:24-bookworm-slim
 
 WORKDIR /app
 
-RUN apt-get update -y \
+RUN apt-get update \
     && apt-get install -y --no-install-recommends openssl \
     && rm -rf /var/lib/apt/lists/*
 
@@ -18,4 +18,4 @@ RUN npm run prisma:generate --workspace backend
 
 EXPOSE 3000
 
-CMD ["npm", "run", "dev", "--workspace", "backend"]
+CMD ["npm", "run", "start", "--workspace", "backend"]
