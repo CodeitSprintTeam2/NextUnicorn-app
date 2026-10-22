@@ -130,7 +130,7 @@ flowchart LR
 
 ### 데이터 모델
 
-README에는 핵심 엔티티의 관계만 표시하며, 컬럼과 제약 조건은 데이터베이스 설계 문서에서 관리합니다.
+README에는 핵심 엔티티의 관계만 표시하며, 컬럼과 제약 조건은 [데이터베이스 설계 문서](docs/DATABASE.md)에서 관리합니다.
 
 ```mermaid
 erDiagram
@@ -140,8 +140,6 @@ erDiagram
     COMPARISON ||--|{ COMPARISON_TARGET : contains_1_to_5
     COMPANY ||--o{ COMPARISON_TARGET : selected_as_target
 ```
-
-컬럼, 인덱스, 삭제 정책과 관계 제약 조건은 [데이터베이스 설계 문서](docs/DATABASE.md)를 참고합니다.
 
 ---
 
