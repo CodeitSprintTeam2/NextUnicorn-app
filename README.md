@@ -1,6 +1,6 @@
 <h1>Next Unicorn</h1>
    <div align="center">
-  <img src="./frontend/public/brand/readmelogo.png" alt="View My Startup 로고" width="480" />
+  <img src="./frontend/public/images/readmelogo.png" alt="View My Startup 로고" width="480" />
   <p>스타트업 정보 조회, 기업 비교 및 순위 분석, 모의 가상 투자 기능을 제공하는 웹 서비스입니다.</p>
 </div>
 
@@ -10,10 +10,9 @@
 
 - [프로젝트 소개](#프로젝트-소개)
 - [Quick Start](#quick-start)
-- [기술 스택과 서비스 아키텍처](#기술-스택과-서비스-아키텍처)
-  - [기술 스택](#기술-스택)
-  - [서비스 아키텍처](#서비스-아키텍처)
-  - [데이터 모델](#데이터-모델)
+- [기술 스택](#기술-스택)
+- [서비스 아키텍처](#서비스-아키텍처)
+- [데이터 모델](#데이터-모델)
 - [로컬 실행 가이드라인](#로컬-실행-가이드라인)
 - [환경 변수](#환경-변수)
 - [배포](#배포)
@@ -33,13 +32,13 @@
 
 <div>
   <h4>전체 기업 목록</h4>
-  <img src="./frontend/public/brand/companies.png" alt="전체 기업 목록 페이지" width="900" />
+  <img src="./frontend/public/images/companies.png" alt="전체 기업 목록 페이지" width="900" />
   <p>기업 검색·정렬·페이지네이션과 기업 상세 및 가상 투자 내역을 확인합니다.</p>
 
   <br />
 
   <h4>나의 기업 비교</h4>
-  <img src="./frontend/public/brand/compare.png" alt="나의 기업 비교 페이지" width="900" />
+  <img src="./frontend/public/images/compare.png" alt="나의 기업 비교 페이지" width="900" />
   <p>기준 기업과 최대 5개 기업을 비교하고 매출액·고용 인원 기준 순위를 확인합니다.</p>
 </div>
 
@@ -71,9 +70,7 @@ Docker Compose를 사용해 서비스를 빠르게 실행할 수 있습니다.
 
 ---
 
-## 기술 스택과 서비스 아키텍처
-
-### 기술 스택
+## 기술 스택
 
 #### Frontend
 
@@ -100,35 +97,29 @@ Docker Compose를 사용해 서비스를 빠르게 실행할 수 있습니다.
 
 ![npm](https://img.shields.io/badge/npm-Workspaces-CB3837?style=flat-square&logo=npm&logoColor=ffffff)
 
-### 서비스 아키텍처
+---
+## 서비스 아키텍처
 
-모노레포에서 프론트엔드와 백엔드를 함께 개발하며, 프론트엔드는 Netlify에, 백엔드는 Render에 독립적으로 빌드·배포합니다.
+main 브랜치에 병합된 코드는 Netlify와 Render에 각각 자동 배포되며, 배포된 프론트엔드는 Render API를 통해 PostgreSQL 데이터베이스와 통신합니다.
 
 ```mermaid
-flowchart LR
-    subgraph Development ["Development (Monorepo)"]
-        Repo["Git Repository"]
-        Frontend["frontend/<br/>React + Vite"]
-        Backend["backend/<br/>Express + Prisma"]
-        Repo --> Frontend
-        Repo --> Backend
+flowchart TB
+    subgraph GitHub ["GitHub Workflow"]
+        direction TB
+        Developer["Developer"] --> Feature["Feature Branch"]
+        Feature --> PR["Pull Request"]
+        PR -- "Review & Merge" --> Main["main Branch"]
     end
 
-    subgraph Deployment ["Independent Deployment"]
-        Netlify["Netlify<br/>React SPA"]
-        RenderAPI["Render Web Service<br/>REST API"]
-        Database[("Render PostgreSQL")]
-    end
-
-    Frontend -- "Vite Build & Deploy" --> Netlify
-    Backend -- "Build & Deploy" --> RenderAPI
-    RenderAPI -- "Prisma" --> Database
+    Main -- "Auto Deploy" --> Netlify["Netlify<br/>React Frontend"]
+    Main -- "Auto Deploy" --> RenderAPI["Render<br/>Backend API"]
 
     User["User Browser"] --> Netlify
     Netlify -- "HTTPS / JSON" --> RenderAPI
+    RenderAPI -- "Prisma" --> Database[("Render PostgreSQL")]
 ```
 
-### 데이터 모델
+## 데이터 모델
 
 README에는 핵심 엔티티의 관계만 표시하며, 컬럼과 제약 조건은 [데이터베이스 설계 문서](docs/DATABASE.md)에서 관리합니다.
 
@@ -299,7 +290,7 @@ ViewMyStartup-app/
 │   └── prisma.config.js           # Prisma CLI 설정
 ├── frontend/                      # 프론트엔드 패키지
 │   ├── public/
-│   │   ├── brand/                 # README 및 서비스 브랜드 이미지
+│   │   ├── images/                # README 및 서비스 이미지
 │   │   └── _redirects             # Netlify SPA 라우팅 리디렉션
 │   ├── src/
 │   │   ├── api/                   # API 클라이언트 및 공통 통신 설정
