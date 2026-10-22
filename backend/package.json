@@ -8,6 +8,7 @@
   },
   "scripts": {
     "dev": "node --watch --env-file=.env src/server.js",
+    "dev:docker": "node --watch src/server.js",
     "start": "node src/server.js",
     "test": "node --test",
     "prisma:generate": "prisma generate",

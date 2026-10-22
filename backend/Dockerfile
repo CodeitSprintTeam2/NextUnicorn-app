@@ -14,4 +14,4 @@ RUN npm run prisma:generate --workspace backend
 
 EXPOSE 3000
 
-CMD ["npm", "run", "dev", "--workspace", "backend"]
+CMD ["npm", "run", "start", "--workspace", "backend"]

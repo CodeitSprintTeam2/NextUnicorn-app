@@ -19,6 +19,7 @@ services:
     build:
       context: .
       dockerfile: backend/Dockerfile
+    command: npm run dev:docker --workspace backend
     environment:
       DATABASE_URL: postgresql://postgres:postgres@db:5432/view_my_startup
       CLIENT_ORIGIN: http://localhost:5173
